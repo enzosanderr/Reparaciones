@@ -61,7 +61,7 @@ int ClienteArchivo::buscarPorCuit(const string &cuit) {
    Cliente reg;
    int pos = 0, result = -1;
    while (fread(&reg, sizeof(Cliente), 1, pFile)) {
-      if (reg.getCuit() == cuit && !reg.getEliminado()) {
+      if (reg.getCuit() == cuit) {
          result = pos;
          break;
       }

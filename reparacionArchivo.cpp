@@ -76,7 +76,7 @@ int ReparacionArchivo::buscarPorNumero(int nroReparacion) {
    Reparacion reg;
    int pos = 0, result = -1;
    while (fread(&reg, sizeof(Reparacion), 1, pFile)) {
-      if (reg.getNroReparacion() == nroReparacion && !reg.getEliminado()) {
+      if (reg.getNroReparacion() == nroReparacion) {
          result = pos;
          break;
       }

@@ -39,22 +39,72 @@ void ClienteManager::cargarCamposEditables(Cliente &c)
     c.setTipoCliente(tipo);
 }
 
-Cliente ClienteManager::cargarDatos()
+Cliente ClienteManager::cargarDatos(bool &cancelado)
 {
     Cliente c;
     string cuit;
+    bool cuitValido = false;
+    cancelado = false;
 
     do
     {
-        cuit = cargarTexto("CUIT: ", 14);
-        if (!cuitUnico(cuit)) cout << " > El CUIT ya existe." << endl;
+        cuit = cargarTexto("CUIT (o '0' para cancelar): ", 14);
+
+        if (cuit == "0")
+        {
+            cancelado = true;
+            return c;
+        }
+
+        int pos = _repo.buscarPorCuit(cuit);
+
+        if (pos == -1)
+        {
+            cuitValido = true;
+        }
+        else
+        {
+            //cliente existe
+            Cliente clienteExistente = _repo.leer(pos);
+
+            if (clienteExistente.getEliminado())
+            {
+                cout << "\n > AVISO: Este CUIT pertenece a un cliente dado de baja." << endl;
+                int reactivar = cargarEntero("¨Desea RESTAURAR y reactivar a este cliente ahora? (1=Si, 0=No): ");
+
+                if (reactivar == 1)
+                {
+                    clienteExistente.setEliminado(false);
+                    if (_repo.actualizar(pos, clienteExistente))
+                    {
+                        cout << " >> Cliente restaurado con exito. Proceda a actualizar sus datos." << endl;
+                        c = clienteExistente;
+                        cuitValido = true;
+                    }
+                    else
+                    {
+                        cout << " > ERROR: No se pudo actualizar el archivo." << endl;
+                    }
+                }
+                else
+                {
+                    cout << "Debe ingresar un CUIT diferente o presionar '0' para salir.\n" << endl;
+                }
+            }
+            else
+            {
+                cout << " > ERROR: El CUIT ya pertenece a un cliente ACTIVO." << endl;
+            }
+        }
     }
-    while (!cuitUnico(cuit));
+    while (!cuitValido);
+
     c.setCuit(cuit);
 
     cargarCamposEditables(c);
     return c;
 }
+
 
 void ClienteManager::mostrar(const Cliente &c)
 {
@@ -69,10 +119,44 @@ void ClienteManager::mostrar(const Cliente &c)
 
 void ClienteManager::alta()
 {
-    cout << "\n=== ALTA DE CLIENTE ===" << endl;
-    Cliente c = cargarDatos();
-    if (_repo.crear(c)) cout << "\nCliente guardado exitosamente." << endl;
-    else cout << "\nError al guardar el cliente." << endl;
+    system("cls");
+    cout << "\n=== ALTA DE CLIENTE ===" << endl<<endl;
+
+    bool cancelado = false;
+
+    Cliente c = cargarDatos(cancelado);
+
+    if (cancelado)
+    {
+        cout << "\n>> Alta de cliente cancelada por el usuario." << endl;
+        system("pause");
+        return;
+    }
+
+    //cuit restaurado
+    int pos = _repo.buscarPorCuit(c.getCuit());
+    bool exito = false;
+
+    if (pos != -1)
+    {
+        exito = _repo.actualizar(pos, c);
+    }
+    else
+    {
+        //cliente nuevo
+        c.setEliminado(false);
+        exito = _repo.crear(c);
+    }
+
+    if (exito)
+    {
+        cout << "\n>>> EXITO: Cliente registrado correctamente." << endl;
+    }
+    else
+    {
+        cout << "\n > ERROR: No se pudo escribir en el archivo." << endl;
+    }
+    system("pause");
 }
 
 void ClienteManager::baja()
@@ -209,14 +293,22 @@ void ClienteManager::baja()
 }
 
 
-
 void ClienteManager::modificacion()
 {
     string cuit = seleccionarCliente();
     if (cuit == "0") return;
 
     int pos = _repo.buscarPorCuit(cuit);
+    if (pos == -1) return;
+
     Cliente c = _repo.leer(pos);
+
+    if (c.getEliminado())
+    {
+        cout << "\n > ERROR: No se puede modificar un cliente dado de baja." << endl;
+        system("pause");
+        return;
+    }
 
     int opcion;
     do

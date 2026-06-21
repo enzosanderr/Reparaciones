@@ -16,7 +16,11 @@ bool EquipoManager::nroEquipoUnico(int nro)
 
 bool EquipoManager::clienteExiste(const string &cuit)
 {
-    return _repoCliente.buscarPorCuit(cuit) != -1;
+    int pos = _repoCliente.buscarPorCuit(cuit);
+    if (pos == -1) return false;
+
+    Cliente c = _repoCliente.leer(pos);
+    return !c.getEliminado();
 }
 
 bool EquipoManager::cargarCamposEditables(Equipo &e)
@@ -152,8 +156,6 @@ void EquipoManager::alta()
     }
     system("pause");
 }
-
-
 
 void EquipoManager::baja()
 {

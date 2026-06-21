@@ -16,10 +16,11 @@ public:
    int contarTareasPendientes(const std::string &legajo);
 
 private:
-   Empleado cargarDatos();
+   Empleado cargarDatos(bool &cancelado);
    void cargarCamposEditables(Empleado &e);
    void mostrar(const Empleado &e);
    bool legajoUnico(const std::string &legajo);
+   std::string seleccionarEmpleado();
 
    EmpleadoArchivo _repo;
 };

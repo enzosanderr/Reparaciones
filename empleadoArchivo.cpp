@@ -61,7 +61,7 @@ int EmpleadoArchivo::buscarPorLegajo(const string &legajo) {
    Empleado reg;
    int pos = 0, result = -1;
    while (fread(&reg, sizeof(Empleado), 1, pFile)) {
-      if (reg.getLegajo() == legajo && !reg.getEliminado()) {
+      if (reg.getLegajo() == legajo) {
          result = pos;
          break;
       }

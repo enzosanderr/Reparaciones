@@ -61,7 +61,7 @@ int EquipoArchivo::buscarPorNumero(int nroEquipo) {
    Equipo reg;
    int pos = 0, result = -1;
    while (fread(&reg, sizeof(Equipo), 1, pFile)) {
-      if (reg.getNroEquipo() == nroEquipo && !reg.getEliminado()) {
+      if (reg.getNroEquipo() == nroEquipo) {
          result = pos;
          break;
       }

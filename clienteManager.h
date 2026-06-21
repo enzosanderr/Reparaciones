@@ -1,22 +1,23 @@
 #pragma once
 #include "clienteArchivo.h"
 
-class ClienteManager {
+class ClienteManager
+{
 public:
-   ClienteManager();
+    ClienteManager();
 
-   void alta();
-   void baja();
-   void modificacion();
-   void listado();
-   void listadoPorApellido();
+    void alta();
+    void baja();
+    void modificacion();
+    void listado();
+    void listadoPorApellido();
 
 private:
-   Cliente cargarDatos();
-   void cargarCamposEditables(Cliente &c);
-   void mostrar(const Cliente &c);
-   bool cuitUnico(const std::string &cuit);
-   std::string seleccionarCliente();
+    Cliente cargarDatos(bool &cancelado);
+    void cargarCamposEditables(Cliente &c);
+    void mostrar(const Cliente &c);
+    bool cuitUnico(const std::string &cuit);
+    std::string seleccionarCliente();
 
-   ClienteArchivo _repo;
+    ClienteArchivo _repo;
 };

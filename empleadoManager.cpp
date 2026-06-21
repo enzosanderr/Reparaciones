@@ -27,19 +27,67 @@ void EmpleadoManager::cargarCamposEditables(Empleado &e)
     e.setApellido(cargarTexto("Apellido: ", 19));
 }
 
-Empleado EmpleadoManager::cargarDatos()
+Empleado EmpleadoManager::cargarDatos(bool &cancelado)
 {
     Empleado e;
     string legajo;
+    bool legajoValido = false;
+    cancelado = false;
 
     do
     {
-        legajo = cargarTexto("Legajo: ", 9);
-        if (!legajoUnico(legajo)) cout << " > El legajo ya existe." << endl;
-    }
-    while (!legajoUnico(legajo));
-    e.setLegajo(legajo);
+        legajo = cargarTexto("Legajo (o '0' para cancelar): ", 9);
 
+        if (legajo == "0")
+        {
+            cancelado = true;
+            return e;
+        }
+
+        int pos = _repo.buscarPorLegajo(legajo);
+
+        if (pos == -1)
+        {
+            legajoValido = true;
+        }
+        else
+        {
+            //verificacion legajo borrado
+            Empleado empExistente = _repo.leer(pos);
+
+            if (empExistente.getEliminado())
+            {
+                cout << "\n > AVISO: Este Legajo pertenece a un empleado dado de baja." << endl;
+                int reactivar = cargarEntero("¨Desea RESTAURAR y reactivar a este empleado ahora? (1=Si, 0=No): ");
+
+                if (reactivar == 1)
+                {
+                    empExistente.setEliminado(false);
+                    if (_repo.actualizar(pos, empExistente))
+                    {
+                        cout << " >> Empleado restaurado con exito. Proceda a actualizar sus datos." << endl;
+                        e = empExistente;
+                        legajoValido = true;
+                    }
+                    else
+                    {
+                        cout << " > ERROR: No se pudo actualizar el archivo." << endl;
+                    }
+                }
+                else
+                {
+                    cout << "Debe ingresar un Legajo diferente o presionar '0' para salir.\n" << endl;
+                }
+            }
+            else
+            {
+                cout << " > ERROR: El Legajo ya pertenece a un empleado ACTIVO." << endl;
+            }
+        }
+    }
+    while (!legajoValido);
+
+    e.setLegajo(legajo);
     cargarCamposEditables(e);
     return e;
 }
@@ -53,25 +101,53 @@ void EmpleadoManager::mostrar(const Empleado &e)
 
 void EmpleadoManager::alta()
 {
-    cout << "\n=== ALTA DE EMPLEADO ===" << endl;
-    Empleado e = cargarDatos();
-    if (_repo.crear(e)) cout << "\nEmpleado guardado exitosamente." << endl;
-    else cout << "\nError al guardar el empleado." << endl;
+    system("cls");
+    cout << "\n=== ALTA DE EMPLEADO ===" << endl<<endl;
+
+    bool cancelado = false;
+    Empleado e = cargarDatos(cancelado);
+
+    if (cancelado)
+    {
+        cout << "\n>> Alta de empleado cancelada por el usuario." << endl;
+        system("pause");
+        return;
+    }
+
+    int pos = _repo.buscarPorLegajo(e.getLegajo());
+    bool exito = false;
+
+    if (pos != -1)
+    {
+        //empleado restaurado
+        exito = _repo.actualizar(pos, e);
+    }
+    else
+    {
+        //empleado nuevo
+        e.setEliminado(false);
+        exito = _repo.crear(e);
+    }
+
+    if (exito) cout << "\n>>> EXITO: Empleado registrado correctamente." << endl;
+    else cout << "\n > ERROR: No se pudo escribir en el archivo." << endl;
+
+    system("pause");
 }
 
 
 void EmpleadoManager::baja()
 {
     system("cls");
-    cout << "=== BAJA DE EMPLEADO ===" << endl;
+    cout << "=== BAJA DE EMPLEADO ===" << endl<<endl;
 
-    string legajo = cargarTexto("Ingrese el legajo del empleado (o '0' para cancelar): ", 9);
+    string legajo = seleccionarEmpleado();
     if (legajo == "0") return;
 
     int pos = _repo.buscarPorLegajo(legajo);
     if (pos == -1)
     {
-        cout << " > ERROR: El empleado con legajo " << legajo << " no existe." << endl;
+        cout << "\n > ERROR: El empleado con legajo " << legajo << " no existe en el sistema." << endl;
         system("pause");
         return;
     }
@@ -80,12 +156,11 @@ void EmpleadoManager::baja()
 
     if (emp.getEliminado())
     {
-        cout << " > El empleado ya se encuentra dado de baja." << endl;
+        cout << "\n > ERROR: El empleado ya se encuentra dado de baja." << endl;
         system("pause");
         return;
     }
 
-    //verificacion de reparaciones activas
     if (empleadoTieneTareasPendientes(legajo))
     {
         cout << " > ERROR: No se puede dar de baja." << endl;
@@ -94,13 +169,12 @@ void EmpleadoManager::baja()
         return;
     }
 
-    // confirmacion
     system("cls");
-    cout << "=== CONFIRMACION DE BAJA ===" << endl;
+    cout << "=== CONFIRMACION DE BAJA ===" << endl<<endl;
     mostrar(emp);
     cout << "--------------------------------------------------" << endl;
 
-    int confirmar = cargarEntero("¨Confirma la baja logica de este empleado? (1=Si, 0=No): ");
+    int confirmar = cargarEntero("¨Confirma la baja de este empleado? (1=Si, 0=No): ");
     if (confirmar != 1)
     {
         cout << " >> Operacion cancelada." << endl;
@@ -123,25 +197,56 @@ void EmpleadoManager::baja()
 
 void EmpleadoManager::modificacion()
 {
-    cout << "\n=== MODIFICACION DE EMPLEADO ===" << endl;
-    string legajo = cargarCadena("Ingrese legajo del empleado a modificar: ");
+    string legajo = seleccionarEmpleado();
+    if (legajo == "0") return;
 
     int pos = _repo.buscarPorLegajo(legajo);
-    if (pos == -1)
+    if (pos == -1) return;
+
+    Empleado e = _repo.leer(pos);
+
+    if (e.getEliminado())
     {
-        cout << "\nEmpleado no encontrado o esta eliminado." << endl;
+        cout << "\n > ERROR: No se puede modificar un empleado dado de baja." << endl;
+        system("pause");
         return;
     }
 
-    Empleado e = _repo.leer(pos);
-    cout << "\nEmpleado actual:" << endl;
-    mostrar(e);
+    int opcion;
+    do
+    {
+        system("cls");
+        cout << "=== MODIFICAR EMPLEADO: " << e.getNombre() << " " << e.getApellido() << " ===" << endl;
+        mostrar(e);
+        cout << "--------------------------------------------------" << endl;
+        cout << "1. Modificar Nombre" << endl;
+        cout << "2. Modificar Apellido" << endl;
+        cout << "0. Volver al menu anterior" << endl;
 
-    cout << "\nIngrese los nuevos datos:" << endl;
-    cargarCamposEditables(e);
+        opcion = cargarEntero("\nSeleccione una opcion: ");
 
-    if (_repo.actualizar(pos, e)) cout << "\nEmpleado modificado exitosamente." << endl;
-    else cout << "\nError al modificar el empleado." << endl;
+        switch (opcion)
+        {
+        case 1:
+            e.setNombre(cargarTexto("Nuevo nombre: ", 19));
+            break;
+        case 2:
+            e.setApellido(cargarTexto("Nuevo apellido: ", 19));
+            break;
+        case 0:
+            break;
+        default:
+            cout << "Opcion incorrecta." << endl;
+            system("pause");
+        }
+
+        if (opcion == 1 || opcion == 2)
+        {
+            if (_repo.actualizar(pos, e)) cout << " >> Datos actualizados." << endl;
+            system("pause");
+        }
+    }
+    while (opcion != 0);
 }
 
 void EmpleadoManager::listado()
@@ -245,4 +350,48 @@ int EmpleadoManager::contarTareasPendientes(const std::string &legajo)
         }
     }
     return contador;
+}
+
+string EmpleadoManager::seleccionarEmpleado()
+{
+    int opcion;
+    do
+    {
+        system("cls");
+        cout << "=== SELECCIONAR EMPLEADO ===" << endl<<endl;
+        cout << "1. Ingresar Legajo del empleado" << endl;
+        cout << "2. Listar todos los empleados activos" << endl;
+        cout << "0. Cancelar" << endl;
+        opcion = cargarEntero("\nSeleccione una opcion: ");
+
+        switch (opcion)
+        {
+        case 1:
+            return cargarTexto("Ingrese el Legajo: ", 9);
+
+        case 2:
+        {
+            listado();
+            string legajo = cargarTexto("\nIngrese el Legajo seleccionado (o '0' para cancelar): ", 9);
+            if (legajo == "0") break;
+
+            int pos = _repo.buscarPorLegajo(legajo);
+            if (pos != -1 && !_repo.leer(pos).getEliminado())
+            {
+                return legajo;
+            }
+            cout << " > Legajo invalido o empleado no encontrado." << endl;
+            system("pause");
+            break;
+        }
+        case 0:
+            return "0";
+        default:
+            cout << " > Opcion incorrecta." << endl;
+            system("pause");
+        }
+    }
+    while (opcion != 0);
+
+    return "0";
 }
