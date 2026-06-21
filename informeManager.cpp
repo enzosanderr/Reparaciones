@@ -12,6 +12,10 @@ InformeManager::InformeManager()
 void InformeManager::recaudacionPorPeriodo()
 {
     Fecha desde, hasta;
+
+    Fecha fechaActual;
+    fechaActual.setFechaActual();
+
     bool rangoValido = false;
 
     do
@@ -30,9 +34,15 @@ void InformeManager::recaudacionPorPeriodo()
             continue;
         }
 
-        if (hasta.aNumero() < desde.aNumero())
+        if(hasta.aNumero() > fechaActual.aNumero())
         {
-            cout << " > ERROR LOGICO: El limite 'Hasta' debe ser posterior o igual al limite 'Desde'." << endl;
+            cout<<"\n > ERROR: La fecha 'hasta' no puede ser posterior a la fecha actual"<<endl;
+            cout<<"\n Fecha Actual: "<<fechaActual.toString()<<endl<<endl;
+
+        }
+        else if (hasta.aNumero() < desde.aNumero())
+        {
+            cout << "\n > ERROR: La fecha 'Desde' debe ser anterior o igual a la fecha 'Hasta'.\n" << endl;
         }
         else
         {
@@ -44,9 +54,9 @@ void InformeManager::recaudacionPorPeriodo()
     int cant = _repoReparacion.getCantidadRegistros();
 
     cout << "\nRECAUDACION ENTRE " << desde.toString() << " Y " << hasta.toString() << endl;
-    cout << "==========================" << endl;
+    cout << "=============================================================" << endl;
     cout << left << setw(15) << "PERIODO" << "RECAUDACION" << endl;
-    cout << "==========================" << endl;
+    cout << "=============================================================" << endl;
 
     float total = 0;
     int y = desde.getAnio();
@@ -80,20 +90,31 @@ void InformeManager::recaudacionPorPeriodo()
         }
     }
 
-    cout << "==========================" << endl;
+    cout << "=============================================================" << endl;
     cout << left << setw(15) << "TOTAL"
          << "$ " << fixed << setprecision(2) << total << endl;
 }
 
 void InformeManager::recaudacionPorCliente()
 {
-    cout << "\n=== INFORME: RECAUDACION POR CLIENTE ===" << endl;
+    cout << "\n========= INFORME: RECAUDACION POR CLIENTE =========" << endl;
+
     Fecha desde = cargarFecha("Fecha desde:");
     Fecha hasta = cargarFecha("Fecha hasta:");
 
-    if (hasta.aNumero() < desde.aNumero())
+    Fecha fechaActual;
+    fechaActual.setFechaActual();
+
+    if(hasta.aNumero() > fechaActual.aNumero())
     {
-        cout << "Rango invalido." << endl;
+        cout<<"\nERROR: La fecha 'hasta' no puede ser posterior a la fecha actual"<<endl;
+        cout<<"\n Fecha Actual: "<<fechaActual.toString()<<endl<<endl;
+        return;
+
+    }
+    else if (hasta.aNumero() < desde.aNumero())
+    {
+        cout << "\n > ERROR: La fecha 'Desde' debe ser anterior o igual a la fecha 'Hasta'.\n" << endl;
         return;
     }
 
@@ -106,11 +127,11 @@ void InformeManager::recaudacionPorCliente()
 
     cout << "\nRECAUDACION POR CLIENTE ENTRE " << desde.toString()
          << " Y " << hasta.toString() << endl;
-    cout << "================================================================" << endl;
+    cout << "======================================================================================" << endl;
     cout << left << setw(15) << "CUIT" << setw(20) << "APELLIDO"
          << setw(20) << "NOMBRE" << setw(15) << "TOTAL"
          << "REPARACIONES" << endl;
-    cout << "================================================================" << endl;
+    cout << "======================================================================================" << endl;
 
     bool hay = false;
     float totalGeneral = 0;
@@ -152,7 +173,7 @@ void InformeManager::recaudacionPorCliente()
         cout << "No hubo recaudacion en el periodo." << endl;
         return;
     }
-    cout << "================================================================" << endl;
+    cout << "======================================================================================" << endl;
     cout << ">>> TOTAL GENERAL: $" << fixed << setprecision(2) << totalGeneral << endl;
 }
 
@@ -161,10 +182,19 @@ void InformeManager::reparacionesPorTipoEquipo()
     cout << "\n=== INFORME: REPARACIONES POR TIPO DE EQUIPO ===" << endl;
     Fecha desde = cargarFecha("Fecha desde:");
     Fecha hasta = cargarFecha("Fecha hasta:");
+    Fecha fechaActual;
+    fechaActual.setFechaActual();
 
-    if (hasta.aNumero() < desde.aNumero())
+    if(hasta.aNumero() > fechaActual.aNumero())
     {
-        cout << "Rango invalido." << endl;
+        cout<<"\nERROR: La fecha 'hasta' no puede ser posterior a la fecha actual"<<endl;
+        cout<<"\n Fecha Actual: "<<fechaActual.toString()<<endl<<endl;
+        return;
+
+    }
+    else if (hasta.aNumero() < desde.aNumero())
+    {
+        cout << "\n > ERROR: La fecha 'Desde' debe ser anterior o igual a la fecha 'Hasta'.\n" << endl;
         return;
     }
 
@@ -202,10 +232,10 @@ void InformeManager::reparacionesPorTipoEquipo()
 
     cout << "\nREPARACIONES POR TIPO DE EQUIPO ENTRE " << desde.toString()
          << " Y " << hasta.toString() << endl;
-    cout << "==========================================" << endl;
+    cout << "=============================================================" << endl;
     cout << left << setw(20) << "TIPO" << setw(12) << "CANTIDAD"
          << "RECAUDACION" << endl;
-    cout << "==========================================" << endl;
+    cout << "=============================================================" << endl;
 
     int totalCant = 0;
     float totalRec = 0;
@@ -217,7 +247,7 @@ void InformeManager::reparacionesPorTipoEquipo()
         totalCant += cantidades[t];
         totalRec += recaudaciones[t];
     }
-    cout << "==========================================" << endl;
+    cout << "=============================================================" << endl;
     cout << left << setw(20) << "TOTAL"
          << setw(12) << totalCant
          << "$ " << fixed << setprecision(2) << totalRec << endl;
@@ -229,9 +259,19 @@ void InformeManager::productividadEmpleados()
     Fecha desde = cargarFecha("Fecha desde:");
     Fecha hasta = cargarFecha("Fecha hasta:");
 
-    if (hasta.aNumero() < desde.aNumero())
+    Fecha fechaActual;
+    fechaActual.setFechaActual();
+
+    if(hasta.aNumero() > fechaActual.aNumero())
     {
-        cout << "Rango invalido." << endl;
+        cout<<"\nERROR: La fecha 'hasta' no puede ser posterior a la fecha actual"<<endl;
+        cout<<"\n Fecha Actual: "<<fechaActual.toString()<<endl<<endl;
+        return;
+
+    }
+    else if (hasta.aNumero() < desde.aNumero())
+    {
+        cout << "\n > ERROR: La fecha 'Desde' debe ser anterior o igual a la fecha 'Hasta'.\n" << endl;
         return;
     }
 
@@ -243,11 +283,11 @@ void InformeManager::productividadEmpleados()
     }
 
     cout << "\nPRODUCTIVIDAD ENTRE " << desde.toString() << " Y " << hasta.toString() << endl;
-    cout << "================================================================" << endl;
+    cout << "============================================================================" << endl;
     cout << left << setw(10) << "LEGAJO" << setw(20) << "APELLIDO"
          << setw(20) << "NOMBRE" << setw(8) << "REPS"
          << "FACTURADO" << endl;
-    cout << "================================================================" << endl;
+    cout << "============================================================================" << endl;
 
     int cantR = _repoReparacion.getCantidadRegistros();
     for (int i = 0; i < cantE; i++)
@@ -275,12 +315,16 @@ void InformeManager::productividadEmpleados()
              << setw(8) << reps
              << "$ " << fixed << setprecision(2) << facturado << endl;
     }
-    cout << "================================================================" << endl;
+    cout << "============================================================================" << endl;
 }
 
 void InformeManager::equiposReincidentes()
 {
     Fecha desde, hasta;
+
+    Fecha fechaActual;
+    fechaActual.setFechaActual();
+
     bool rangoValido = false;
 
     do
@@ -299,9 +343,15 @@ void InformeManager::equiposReincidentes()
             continue;
         }
 
-        if (hasta.aNumero() < desde.aNumero())
+        if(hasta.aNumero() > fechaActual.aNumero())
         {
-            cout << " > ERROR LOGICO: El limite 'Hasta' debe ser posterior o igual al limite 'Desde'." << endl;
+            cout<<"\nERROR: La fecha 'hasta' no puede ser posterior a la fecha actual"<<endl;
+            cout<<"\n Fecha Actual: "<<fechaActual.toString()<<endl<<endl;
+            continue;
+        }
+        else if (hasta.aNumero() < desde.aNumero())
+        {
+            cout << "\n > ERROR: La fecha 'Desde' debe ser anterior o igual a la fecha 'Hasta'.\n" << endl;
         }
         else
         {
@@ -312,7 +362,7 @@ void InformeManager::equiposReincidentes()
 
     cout << "\nEQUIPOS REINCIDENTES ENTRE " << desde.toString()
          << " Y " << hasta.toString() << endl;
-    cout << "================================================================" << endl;
+    cout << "==================================================================" << endl<<endl;
 
     int cantE = _repoEquipo.getCantidadRegistros();
     int cantD = _repoDetalle.getCantidadRegistros();
@@ -336,6 +386,8 @@ void InformeManager::equiposReincidentes()
             long f = r.getFechaEntrega().aNumero();
             if (f < desde.aNumero() || f > hasta.aNumero()) continue;
 
+///HACER QUE EN CADA REPARACION SE MUESTRE QUE EMPLEADO LA REALIZO.
+
             cantidad++;
             detalles << "    Reparacion #" << r.getNroReparacion()
                      << " - " << r.getFechaEntrega().toString()
@@ -345,10 +397,11 @@ void InformeManager::equiposReincidentes()
         if (cantidad >= 2)
         {
             cout << "Equipo #" << e.getNroEquipo() << " - " << e.getTipoEquipoString()
-                 << " - " << e.getMarca() << " - " << e.getDescripcion() << endl;
-            cout << "  Cantidad de reparaciones: " << cantidad << endl;
+                 << " - " << e.getMarca() << " - " << e.getDescripcion() << endl<<endl;
+            cout << "  Cliente - CUIT:" << e.getCuit()<<endl<<endl;
+            cout << "  Cantidad de reparaciones:   " << cantidad << endl;
             cout << detalles.str();
-            cout << "----------------------------------------------------------------" << endl;
+            cout << "------------------------------------------------------------------" << endl;
             hayReincidentes = true;
         }
     }

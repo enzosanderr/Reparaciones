@@ -92,7 +92,7 @@ bool ReparacionManager::equipoPerteneceACliente(int nroEquipo, const string &cui
 
 void ReparacionManager::mostrar(const Reparacion &r)
 {
-    cout << "Reparacion #" << r.getNroReparacion() << endl;
+    cout << "Reparacion #" << r.getNroReparacion() << endl<<endl;
 
     int posC = _repoCliente.buscarPorCuit(r.getCuit());
     if (posC != -1)
@@ -118,7 +118,7 @@ void ReparacionManager::mostrar(const Reparacion &r)
 
     cout << "Fecha de entrega: " << r.getFechaEntrega().toString() << endl;
 
-    cout << "Equipos reparados:" << endl;
+    cout << "\nEquipos reparados:" << endl;
     int cantD = _repoDetalle.getCantidadRegistros();
     float total = 0;
     bool hay = false;
@@ -140,14 +140,14 @@ void ReparacionManager::mostrar(const Reparacion &r)
         }
     }
     if (!hay) cout << "  (sin equipos cargados)" << endl;
-    cout << "TOTAL: $" << total << endl;
-    cout << "-----------------------------------" << endl;
+    cout << "\nTOTAL: $" << total << endl;
+    cout << "\n----------------------------------------------------------------------\n" << endl;
 }
 
 int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
 {
     int cargados = 0;
-    EquipoManager mgrEquipo; // Instanciamos el manager para llamadas inline de equipos
+    EquipoManager mgrEquipo;
 
     cout << "\n=== CARGA DE EQUIPOS A REPARAR ===" << endl;
     cout << "(Ingrese 0 como numero de equipo para finalizar)" << endl;
@@ -164,19 +164,19 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
                 cout << " > ERROR: Debe asociar al menos un equipo para confirmar la orden de reparacion." << endl;
                 continue;
             }
-            break; // Salida limpia
+            break;
         }
 
         int posEquipo = _repoEquipo.buscarPorNumero(nroEquipo);
 
-        // ALTA INLINE DE EQUIPO
+
         if (posEquipo == -1)
         {
-            cout << " > El equipo #" << nroEquipo << " no esta registrado en el sistema." << endl;
-            int opcion = cargarEntero("Desea dar de alta un NUEVO equipo para este cliente ahora mismo? (1=Si, 0=No): ");
+            cout << "\n > El equipo #" << nroEquipo << " no esta registrado en el sistema." << endl;
+            int opcion = cargarEntero("\nDesea dar de alta un NUEVO equipo para este cliente ahora mismo? (1=Si, 0=No): ");
             if (opcion == 1)
             {
-                mgrEquipo.alta(); // Delegamos al formulario de Equipos
+                mgrEquipo.alta();
                 cout << "\nPor favor, vuelva a ingresar el numero del equipo reci‚n creado." << endl;
             }
             continue;
@@ -184,14 +184,14 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
 
         Equipo eq = _repoEquipo.leer(posEquipo);
 
-        // Control de estado del equipo
+
         if (eq.getEliminado())
         {
             cout << " > ERROR: El equipo seleccionado se encuentra marcado como eliminado." << endl;
             continue;
         }
 
-        // CONTROL RELACIONAL CRITICO (Integridad referencial cruzada)
+
         if (eq.getCuit() != cuit)
         {
             cout << " > ERROR LOGICO: Este equipo le pertenece al cliente CUIT " << eq.getCuit() << endl;
@@ -199,14 +199,14 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
             continue;
         }
 
-        // Control de redundancia
+
         if (detalleYaCargado(nroReparacion, nroEquipo))
         {
             cout << " > ERROR: Este equipo ya fue asignado a esta misma orden de trabajo." << endl;
             continue;
         }
 
-        // Si paso todos los filtros, pedimos el costo estimado y registramos el hijo
+
         float importe = pedirImporte();
         agregarDetalle(nroReparacion, nroEquipo, importe);
         cargados++;
@@ -220,8 +220,7 @@ void ReparacionManager::alta()
 {
     cout << "\n=== ALTA DE REPARACION ===" << endl;
 
-    // Removemos el bloqueo inicial si no hay clientes registrados,
-    // ya que ahora podemos crearlos en caliente en este mismo instante.
+
     if (_repoEmpleado.getCantidadRegistros() == 0)
     {
         cout << " > ERROR CRITICO: No hay empleados registrados en el sistema." << endl;
@@ -229,11 +228,12 @@ void ReparacionManager::alta()
         return;
     }
 
+    //cliente
     string cuit;
     int posCliente = -1;
-    ClienteManager mgrCliente; // Instanciamos el manager para llamadas inline
+    ClienteManager mgrCliente;
 
-    // BUCLE DE VALIDACION / ALTA DE CLIENTE
+
     while (posCliente == -1)
     {
         cuit = cargarTexto("CUIT del cliente (o '0' para cancelar): ", 14);
@@ -247,11 +247,11 @@ void ReparacionManager::alta()
 
         if (posCliente == -1)
         {
-            cout << " > El cliente con CUIT " << cuit << " no esta registrado en el sistema." << endl;
+            cout << "\n > El cliente con CUIT " << cuit << " no esta registrado en el sistema." << endl;
             int opcion = cargarEntero("Desea dar de alta un NUEVO cliente ahora mismo? (1=Si, 0=No): ");
             if (opcion == 1)
             {
-                mgrCliente.alta(); // Delegamos el control al formulario de Clientes
+                mgrCliente.alta();
                 cout << "\nPor favor, reingrese el CUIT del cliente recien creado para verificarlo." << endl;
             }
             else
@@ -261,12 +261,12 @@ void ReparacionManager::alta()
         }
         else
         {
-            // El cliente existe, verificamos que no este eliminado logicamente
+
             Cliente c = _repoCliente.leer(posCliente);
             if (c.getEliminado())
             {
                 cout << " > El cliente asociado a este CUIT se encuentra dado de baja logica." << endl;
-                int opcion = cargarEntero("Desea restaurar (reactivar) a este cliente? (1=Si, 0=No): ");
+                int opcion = cargarEntero("\n Desea restaurar (reactivar) a este cliente? (1=Si, 0=No): ");
                 if (opcion == 1)
                 {
                     c.setEliminado(false);
@@ -281,7 +281,7 @@ void ReparacionManager::alta()
         }
     }
 
-    // BUCLE DE VALIDACION DE EMPLEADO (TECNICO)
+    //empleado
     string legajo;
     int posEmpleado = -1;
     while (posEmpleado == -1)
@@ -309,14 +309,12 @@ void ReparacionManager::alta()
         }
     }
 
-    // Asignaci¢n segura del ID correlativo de la cabecera
+
     int nro = _repo.getNuevoId();
     cout << "\nNumero de orden de reparacion asignado: " << nro << endl;
 
-    // Pasamos a la carga transaccional de los equipos (Detalles)
     int cargados = cargarDetalles(nro, cuit);
 
-    // Si y solo si se cargaron equipos reales, procedemos al cierre de la cabecera
     if (cargados > 0)
     {
         Fecha fe;
@@ -332,7 +330,7 @@ void ReparacionManager::alta()
             {
                 cout << " > ERROR: La fecha ingresada es invalida a nivel calendario." << endl;
             }
-            // Validacion temporal
+
             else if (fe.aNumero() < fechaActual.aNumero())
             {
                 cout << " > ERROR LOGICO: No puede ingresar una fecha estimada de entrega en el pasado." << endl;
@@ -345,7 +343,7 @@ void ReparacionManager::alta()
         }
         while (!fechaValida);
 
-        // Instancia del registro de cabecera
+
         Reparacion r(nro, cuit, legajo, fe);
         if (_repo.crear(r))
         {
@@ -354,12 +352,12 @@ void ReparacionManager::alta()
         }
         else
         {
-            cout << "\n>>> ERROR CRITICO: No se pudo escribir la cabecera en reparaciones.dat" << endl;
+            cout << "\n>>> ERROR CRITICO: No se pudo escribir la cabecera en el archivo reparaciones" << endl;
         }
     }
     else
     {
-        cout << "\n>>> Alta cancelada. No se genero ningun registro en la base de datos." << endl;
+        cout << "\n>>> Alta cancelada. No se genero ningun registro en el archivo." << endl;
     }
 }
 
@@ -404,7 +402,7 @@ void ReparacionManager::modificarDetalles(const Reparacion &r)
 
     do
     {
-        cout << "\n=== DETALLES DE LA REPARACION #" << r.getNroReparacion() << " ===" << endl;
+        cout << "\n=== DETALLES DE LA REPARACION #\n" << r.getNroReparacion() << " ===" << endl;
         cout << "1. Agregar equipo al detalle" << endl;
         cout << "2. Modificar importe de un equipo" << endl;
         cout << "3. Quitar equipo del detalle" << endl;
@@ -674,7 +672,7 @@ int ReparacionManager::buscarPorCuit() {
     for (int i = 0; i < cant; i++) {
         if (!v[i].getEliminado() && v[i].getCuit() == cuitBuscado) {
             mostrar(v[i]);
-            cout << "-----------------------------------" << endl;
+
             hay = true;
         }
     }
@@ -714,7 +712,7 @@ int ReparacionManager::seleccionarDeUltimasDiez() {
     for (int i = inicio; i < cant; i++) {
         if (!v[i].getEliminado()) {
             mostrar(v[i]);
-            cout << "-----------------------------------" << endl;
+
             hay = true;
         }
     }
@@ -732,7 +730,7 @@ int ReparacionManager::seleccionarDeUltimasDiez() {
 
 void ReparacionManager::listado()
 {
-    cout << "\n=== LISTADO DE REPARACIONES ===" << endl;
+    cout << "\n=== LISTADO DE REPARACIONES ===\n" << endl;
     int cantidad = _repo.getCantidadRegistros();
     if (cantidad == 0)
     {
