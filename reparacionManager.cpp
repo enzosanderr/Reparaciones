@@ -813,6 +813,7 @@ void ReparacionManager::modificacion()
         case 5:
             modificarDetalles(r);
             r = _repo.leer(pos);
+            break;
         case 0:
             break;
 
@@ -968,7 +969,8 @@ int ReparacionManager::buscarPorCuit(int filtroEstado)
         for (int i = 0; i < cantidad; i++)
         {
             Reparacion r = _repo.leer(i);
-            if (!r.getEliminado() && r.getCuit() == cuit)
+
+            if (!r.getEliminado() && r.getCuit() == cuit && (filtroEstado == 0 || r.getEstado() == filtroEstado))
             {
                 coincidencias++;
                 ultimoIdEncontrado = r.getNroReparacion();
@@ -994,7 +996,7 @@ int ReparacionManager::buscarPorCuit(int filtroEstado)
         }
 
 
-        system("cls");
+system("cls");
         cout << "=== REPARACIONES ENCONTRADAS PARA EL CUIT: " << cuit << " ===" << endl;
         cout << "----------------------------------------------------------------------" << endl;
 
@@ -1002,11 +1004,11 @@ int ReparacionManager::buscarPorCuit(int filtroEstado)
         {
             Reparacion r = _repo.leer(i);
 
-
             if (!r.getEliminado() && r.getCuit() == cuit && (filtroEstado == 0 || r.getEstado() == filtroEstado))
             {
-                coincidencias++;
-                ultimoIdEncontrado = r.getNroReparacion();
+                cout << " ID Orden: #" << r.getNroReparacion()
+                     << " | Ingreso: " << r.getFechaIngreso().toString()
+                     << " | Estado: " << getNombreEstado(r.getEstado()) << endl;
             }
         }
         cout << "----------------------------------------------------------------------" << endl;
