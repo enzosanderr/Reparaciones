@@ -1,6 +1,7 @@
 #include <iostream>
 #include "clienteManager.h"
 #include "reparacionManager.h"
+#include "equipoArchivo.h"
 #include "utils.h"
 using namespace std;
 
@@ -79,22 +80,21 @@ void ClienteManager::baja()
     system("cls");
     cout << "=== BAJA DE CLIENTE ===" << endl;
 
-    string cuit = cargarTexto("Ingrese el CUIT del cliente a dar de baja (o '0' para cancelar): ", 14);
+    string cuit = seleccionarCliente();
     if (cuit == "0") return;
 
     int pos = _repo.buscarPorCuit(cuit);
     if (pos == -1)
     {
-        cout << " > ERROR: El cliente con CUIT " << cuit << " no esta registrado." << endl;
+        cout << "\n > ERROR: El cliente con CUIT " << cuit << " no existe en el sistema." << endl;
         system("pause");
         return;
     }
 
     Cliente c = _repo.leer(pos);
-
     if (c.getEliminado())
     {
-        cout << " > El cliente ya se encuentra dado de baja." << endl;
+        cout << "\n > ERROR: El cliente con CUIT " << cuit << " ya se encuentra dado de baja." << endl;
         system("pause");
         return;
     }
@@ -108,11 +108,10 @@ void ClienteManager::baja()
         Reparacion r = repoRep.leer(i);
         if (!r.getEliminado() && r.getCuit() == cuit)
         {
-            // Estado 1=Sin iniciar, 2=En proceso
             if (r.getEstado() == 1 || r.getEstado() == 2)
             {
-                cout << " > ERROR: No se puede eliminar el cliente. Tiene la Reparacion #"
-                     << r.getNroReparacion() << " activa actualmente." << endl;
+                cout << " > ERROR: No se puede eliminar el cliente." << endl;
+                cout << "   Tiene la Reparacion #" << r.getNroReparacion() << " activa en el taller." << endl;
                 system("pause");
                 return;
             }
@@ -123,9 +122,40 @@ void ClienteManager::baja()
     system("cls");
     cout << "=== CONFIRMACION DE BAJA ===" << endl;
     mostrar(c);
-    cout << "--------------------------------------------------" << endl;
+    cout << "-----------------------------------------------------------------------------" << endl;
 
-    int confirmar = cargarEntero("¨Confirma la baja logica de este cliente? (1=Si, 0=No): ");
+    EquipoArchivo repoEq;
+    int cantEquipos = repoEq.getCantidadRegistros();
+    int equiposAfectados = 0;
+
+    for (int i = 0; i < cantEquipos; i++)
+    {
+        Equipo eq = repoEq.leer(i);
+        if (!eq.getEliminado() && eq.getCuit() == cuit)
+        {
+            if (equiposAfectados == 0)
+            {
+                cout << "ADVERTENCIA: Se daran de baja los siguientes equipos asociados al cliente:" << endl;
+            }
+            cout << "  - Equipo #" << eq.getNroEquipo() << " | " << eq.getTipoEquipoString()
+                 << " (" << eq.getMarca() << ")" << endl;
+            equiposAfectados++;
+        }
+    }
+
+    if (equiposAfectados == 0)
+    {
+        cout << "(El cliente no tiene equipos asociados en este momento)." << endl;
+    }
+    else
+    {
+        cout << "\nATENCION: La baja de este cliente provocara la eliminacion de "
+             << equiposAfectados << " equipo(s)." << endl;
+    }
+    cout << "-----------------------------------------------------------------------------" << endl;
+
+
+    int confirmar = cargarEntero("¨Confirma la baja de este cliente? (1=Si, 0=No): ");
     if (confirmar != 1)
     {
         cout << " >> Operacion cancelada." << endl;
@@ -133,41 +163,99 @@ void ClienteManager::baja()
         return;
     }
 
+    //baja
     c.setEliminado(true);
-    if (_repo.actualizar(pos, c))
-    {
-        cout << "\n>>> EXITO: Cliente CUIT " << cuit << " dado de baja correctamente." << endl;
-    }
-    else
+    if (!_repo.actualizar(pos, c))
     {
         cout << "\n > ERROR: No se pudo guardar la baja en el disco." << endl;
+        system("pause");
+        return;
     }
+
+    //baja de equipos asociados
+    int equiposBorrados = 0;
+    int erroresBorrando = 0;
+
+    for (int i = 0; i < cantEquipos; i++)
+    {
+        Equipo eq = repoEq.leer(i);
+        if (!eq.getEliminado() && eq.getCuit() == cuit)
+        {
+            eq.setEliminado(true);
+
+            if (repoEq.actualizar(i, eq))
+            {
+                equiposBorrados++;
+            }
+            else
+            {
+                erroresBorrando++;
+            }
+        }
+    }
+
+    cout << "\n>>> EXITO: Cliente CUIT " << cuit << " dado de baja." << endl;
+    if (equiposBorrados > 0)
+    {
+        cout << "    Se eliminaron " << equiposBorrados << " equipo(s) asociado(s)." << endl;
+    }
+    if (erroresBorrando > 0)
+    {
+        cout << "    ADVERTENCIA: Hubo fallos al eliminar " << erroresBorrando << " equipo(s)." << endl;
+    }
+
     system("pause");
+
 }
 
 
 
 void ClienteManager::modificacion()
 {
-    cout << "\n=== MODIFICACION DE CLIENTE ===" << endl;
-    string cuit = cargarCadena("Ingrese CUIT del cliente a modificar: ");
+    string cuit = seleccionarCliente();
+    if (cuit == "0") return;
 
     int pos = _repo.buscarPorCuit(cuit);
-    if (pos == -1)
-    {
-        cout << "\nCliente no encontrado o esta eliminado." << endl;
-        return;
-    }
-
     Cliente c = _repo.leer(pos);
-    cout << "\nCliente actual:" << endl;
-    mostrar(c);
 
-    cout << "\nIngrese los nuevos datos:" << endl;
-    cargarCamposEditables(c);
+    int opcion;
+    do
+    {
+        system("cls");
+        cout << "=== MODIFICAR CLIENTE: " << c.getNombre() << " " << c.getApellido() << " ===" << endl;
+        mostrar(c);
+        cout << "--------------------------------------------------" << endl;
+        cout << "1. Modificar Nombre" << endl;
+        cout << "2. Modificar Apellido" << endl;
+        cout << "3. Modificar Telefono" << endl;
+        cout << "0. Volver al menu anterior" << endl;
 
-    if (_repo.actualizar(pos, c)) cout << "\nCliente modificado exitosamente." << endl;
-    else cout << "\nError al modificar el cliente." << endl;
+        opcion = cargarEntero("\nSeleccione una opcion: ");
+
+        switch (opcion)
+        {
+        case 1:
+            c.setNombre(cargarTexto("Nuevo nombre: ", 29));
+            break;
+        case 2:
+            c.setApellido(cargarTexto("Nuevo apellido: ", 29));
+            break;
+        case 3:
+            c.setTelefono(cargarTexto("Nuevo telefono: ", 19));
+            break;
+        case 0:
+            break;
+        default:
+            cout << "Opcion incorrecta." << endl;
+        }
+
+        if (opcion >= 1 && opcion <= 3)
+        {
+            if (_repo.actualizar(pos, c)) cout << " >> Datos actualizados." << endl;
+            system("pause");
+        }
+    }
+    while (opcion != 0);
 }
 
 void ClienteManager::listado()
@@ -234,3 +322,47 @@ void ClienteManager::listadoPorApellido()
 
     delete[] v;
 }
+
+string ClienteManager::seleccionarCliente()
+{
+    int opcion;
+    do
+    {
+        system("cls");
+        cout << "=== SELECCIONAR CLIENTE ===" << endl<<endl;
+        cout << "1. Ingresar CUIT del cliente" << endl;
+        cout << "2. Listar todos los clientes activos" << endl;
+        cout << "0. Cancelar" << endl;
+        opcion = cargarEntero("\nSeleccione una opcion: ");
+
+        switch (opcion)
+        {
+        case 1:
+            return cargarTexto("Ingrese el CUIT del cliente: ", 14);
+
+        case 2:
+        {
+            listado();
+            string cuit = cargarTexto("\nIngrese el CUIT del cliente seleccionado (o '0' para cancelar): ", 14);
+            if (cuit == "0") break;
+
+            if (_repo.buscarPorCuit(cuit) != -1 && !_repo.leer(_repo.buscarPorCuit(cuit)).getEliminado())
+            {
+                return cuit;
+            }
+            cout << " > CUIT invalido o cliente no encontrado." << endl;
+            system("pause");
+            break;
+        }
+        case 0:
+            return "0";
+        default:
+            cout << " > Opcion incorrecta." << endl;
+            system("pause");
+        }
+    }
+    while (opcion != 0);
+
+    return "0";
+}
+

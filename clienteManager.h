@@ -16,6 +16,7 @@ private:
    void cargarCamposEditables(Cliente &c);
    void mostrar(const Cliente &c);
    bool cuitUnico(const std::string &cuit);
+   std::string seleccionarCliente();
 
    ClienteArchivo _repo;
 };
