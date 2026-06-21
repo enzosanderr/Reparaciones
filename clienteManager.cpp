@@ -7,10 +7,6 @@ using namespace std;
 
 ClienteManager::ClienteManager() : _repo() {}
 
-bool ClienteManager::cuitUnico(const string &cuit)
-{
-    return _repo.buscarPorCuit(cuit) == -1;
-}
 
 void ClienteManager::cargarCamposEditables(Cliente &c)
 {
@@ -470,9 +466,10 @@ void ClienteManager::menuConsultas()
     {
         system("cls");
         cout << "=== CONSULTAS Y LISTADOS: CLIENTES ===" << endl << endl;
-        cout << "1. Listado ordenado por Apellido" << endl;
-        cout << "2. Consulta individual por CUIT" << endl;
-        cout << "3. Ver historial de clientes inactivos (Bajas)" << endl;
+        cout << "1. Listado general ordenado por Apellido" << endl;
+        cout << "2. Filtrar clientes por Tipo (Particular/Empresa)" << endl;
+        cout << "3. Consulta individual por CUIT" << endl;
+        cout << "4. Ver historial de clientes inactivos (Bajas)" << endl;
         cout << "0. Volver al menu anterior" << endl;
 
         opcion = cargarEntero("\nSeleccione una opcion: ");
@@ -486,10 +483,15 @@ void ClienteManager::menuConsultas()
             break;
         case 2:
             system("cls");
-            consultaPorCuit();
+            listadoPorTipo();
             system("pause");
             break;
         case 3:
+            system("cls");
+            consultaPorCuit();
+            system("pause");
+            break;
+        case 4:
             system("cls");
             listadoInactivos();
             system("pause");
@@ -623,3 +625,41 @@ void ClienteManager::mostrarParqueEquiposPorCliente(const string& cuit)
     }
     cout << "\n----------------------------------------------------------------------------------" << endl;
 }
+
+void ClienteManager::listadoPorTipo()
+{
+    cout << "=== FILTRAR CLIENTES POR TIPO ===" << endl << endl;
+    cout << "1. Clientes Particulares" << endl;
+    cout << "2. Empresas" << endl;
+    int tipoBuscado = cargarEntero("\nSeleccione el tipo que desea filtrar (1 o 2): ");
+
+    if (tipoBuscado != 1 && tipoBuscado != 2)
+    {
+        cout << " > Opcion invalida." << endl;
+        return;
+    }
+
+    system("cls");
+    if (tipoBuscado == 1) cout << "=== LISTADO DE CLIENTES: PARTICULARES ===\n" << endl <<endl;
+    else cout << "=== LISTADO DE CLIENTES: EMPRESAS ===\n" << endl <<endl;
+
+    int cantidad = _repo.getCantidadRegistros();
+    bool hayClientes = false;
+
+    for (int i = 0; i < cantidad; i++)
+    {
+        Cliente c = _repo.leer(i);
+        // Filtramos: que no este eliminado y que coincida estrictamente con la seleccion del usuario
+        if (!c.getEliminado() && c.getTipoCliente() == tipoBuscado)
+        {
+            mostrar(c); // Reutiliza tu salida est ndar
+            hayClientes = true;
+        }
+    }
+
+    if (!hayClientes)
+    {
+        cout << "No se encontraron clientes activos registrados bajo este tipo." << endl;
+    }
+}
+

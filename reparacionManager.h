@@ -23,7 +23,9 @@ public:
 private:
     void listado();
     void listadoPorFechaEntrega();
+    void consultaPorId();
     void consultaPorCliente();
+    void consultaPorNumeroEquipo();
     void consultaPorRangoFechas();
     void listadoInactivos();
 
@@ -36,11 +38,8 @@ private:
     bool equipoPerteneceACliente(int nroEquipo, const std::string &cuit);
     void modificarDetalles(const Reparacion &r);
     std::string getNombreEstado(int estado);
-    void listarPorEstado();
     int seleccionarReparacion(int filtroEstado = 0);
-    int buscarPorId();
     int buscarPorCuit(int filtroEstado = 0);
-    int seleccionarDeUltimasDiez();
     std::string asignarTecnico();
 
     ReparacionArchivo _repo;

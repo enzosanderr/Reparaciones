@@ -850,48 +850,6 @@ string ReparacionManager::getNombreEstado(int estado)
     }
 }
 
-void ReparacionManager::listarPorEstado()
-{
-    system("cls");
-    cout << "=== LISTAR REPARACIONES POR ESTADO ===" << endl<<endl;
-    cout << "1. Ver reparaciones: SIN INICIAR" << endl;
-    cout << "2. Ver reparaciones: EN PROCESO" << endl;
-    cout << "3. Ver reparaciones: TERMINADAS" << endl;
-    int estadoBuscado = cargarEntero("\nSeleccione el estado que desea filtrar: ");
-
-    if (estadoBuscado < 1 || estadoBuscado > 3)
-    {
-        cout << " > Opcion invalida." << endl;
-        system("pause");
-        return;
-    }
-
-    int cant = _repo.getCantidadRegistros();
-    bool hayRegistros = false;
-
-    system("cls");
-    cout << "=== LISTADO DE REPARACIONES [" << getNombreEstado(estadoBuscado) << "] ===" << endl;
-    cout << "------------------------------------------------------------------------" << endl;
-
-    for (int i = 0; i < cant; i++)
-    {
-        Reparacion r = _repo.leer(i);
-
-        if (!r.getEliminado() && r.getEstado() == estadoBuscado)
-        {
-            mostrar(r);
-            cout << "------------------------------------------------------------------------" << endl;
-            hayRegistros = true;
-        }
-    }
-
-    if (!hayRegistros)
-    {
-        cout << " > No se encontraron reparaciones en estado: " << getNombreEstado(estadoBuscado) << endl;
-    }
-
-    system("pause");
-}
 
 int ReparacionManager::seleccionarReparacion(int filtroEstado)
 {
@@ -936,27 +894,7 @@ int ReparacionManager::seleccionarReparacion(int filtroEstado)
     return 0;
 }
 
-int ReparacionManager::buscarPorId()
-{
-    system("cls");
-    int nro = cargarEntero("Ingrese el ID (Nro Reparacion) a buscar: ");
 
-    int pos = _repo.buscarPorNumero(nro);
-    if (pos == -1)
-    {
-        cout << " > No se encontro ninguna reparacion con ese ID." << endl;
-        return -1;
-    }
-
-    Reparacion r = _repo.leer(pos);
-    if (r.getEliminado())
-    {
-        cout << " > La reparacion con ese ID se encuentra dada de baja." << endl;
-        return -1;
-    }
-
-    return nro;
-}
 
 int ReparacionManager::buscarPorCuit(int filtroEstado)
 {
@@ -1237,7 +1175,6 @@ string ReparacionManager::asignarTecnico()
     return legajo;
 }
 
-
 void ReparacionManager::menuConsultas()
 {
     int opcion;
@@ -1246,10 +1183,12 @@ void ReparacionManager::menuConsultas()
         system("cls");
         cout << "=== CONSULTAS Y LISTADOS: REPARACIONES ===" << endl << endl;
         cout << "1. Listado general ordenado por Fecha de Entrega" << endl;
-        cout << "2. Consulta de reparaciones por Cliente (CUIT)" << endl;
-        cout << "3. Filtrar reparaciones por Estado (En proceso, Terminadas, etc.)" << endl;
-        cout << "4. Buscar reparaciones por Rango de Fechas" << endl;
-        cout << "5. Ver historial de reparaciones anuladas (Bajas)" << endl;
+        cout << "2. Consulta individual por Numero de Orden (ID)" << endl;
+        cout << "3. Consulta de reparaciones por Cliente (CUIT)" << endl;
+        cout << "4. Buscar reparaciones por Numero de Equipo" << endl;
+        cout << "5. Filtrar reparaciones por Estado" << endl;
+        cout << "6. Buscar reparaciones por Rango de Fechas" << endl;
+        cout << "7. Ver historial de reparaciones anuladas (Bajas)" << endl;
         cout << "0. Volver al menu anterior" << endl;
 
         opcion = cargarEntero("\nSeleccione una opcion: ");
@@ -1263,18 +1202,28 @@ void ReparacionManager::menuConsultas()
             break;
         case 2:
             system("cls");
-            consultaPorCliente();
+            consultaPorId();
             system("pause");
             break;
         case 3:
-            listarPorEstado();
+            system("cls");
+            consultaPorCliente();
+            system("pause");
             break;
         case 4:
+            system("cls");
+            consultaPorNumeroEquipo();
+            system("pause");
+            break;
+        case 5:
+            listado();
+            break;
+        case 6:
             system("cls");
             consultaPorRangoFechas();
             system("pause");
             break;
-        case 5:
+        case 7:
             system("cls");
             listadoInactivos();
             system("pause");
@@ -1287,6 +1236,7 @@ void ReparacionManager::menuConsultas()
         }
     } while (opcion != 0);
 }
+
 
 void ReparacionManager::consultaPorCliente()
 {
@@ -1375,4 +1325,82 @@ void ReparacionManager::listadoInactivos()
         }
     }
     if (!hayInactivos) cout << "No hay registro de reparaciones anuladas." << endl;
+}
+
+
+void ReparacionManager::consultaPorId()
+{
+    cout << "=== CONSULTA DE REPARACION POR ID ===" << endl << endl;
+    int nro = cargarEntero("Ingrese el ID (Nro Reparacion) a buscar: ");
+
+    int pos = _repo.buscarPorNumero(nro);
+    if (pos == -1)
+    {
+        cout << " > No se encontro ninguna reparacion con ese ID." << endl;
+        return;
+    }
+
+    Reparacion r = _repo.leer(pos);
+    if (r.getEliminado())
+    {
+        cout << " > La reparacion con ese ID se encuentra dada de baja." << endl;
+        return;
+    }
+
+    system("cls");
+    cout << "=== DETALLE COMPLETO DE LA ORDEN ===" << endl << endl;
+    mostrar(r);
+}
+
+void ReparacionManager::consultaPorNumeroEquipo()
+{
+    cout << "=== BUSCAR REPARACIONES POR NUMERO DE EQUIPO ===" << endl << endl;
+    int nroEquipo = cargarEntero("Ingrese el numero de equipo a rastrear: ");
+
+    int posEq = _repoEquipo.buscarPorNumero(nroEquipo);
+    if (posEq == -1)
+    {
+        cout << "\n > El equipo #" << nroEquipo << " no esta registrado en el sistema." << endl;
+        return;
+    }
+
+    Equipo eq = _repoEquipo.leer(posEq);
+    cout << "----------------------------------------------------------------------" << endl;
+    cout << "Equipo:       #" << eq.getNroEquipo() << " - [" << eq.getTipoEquipoString() << "] " << eq.getMarca() << endl;
+    cout << "Descripcion:  " << eq.getDescripcion() << endl;
+    cout << "======================================================================" << endl;
+
+    int cantD = _repoDetalle.getCantidadRegistros();
+    bool hayHistorial = false;
+    cout << "\nHistorial de Ordenes de Trabajo asociadas a este equipo:" << endl<< endl;
+
+
+    for (int i = 0; i < cantD; i++)
+    {
+        DetalleReparacion d = _repoDetalle.leer(i);
+        if (!d.getEliminado() && d.getNroEquipo() == nroEquipo)
+        {
+
+            int posRep = _repo.buscarPorNumero(d.getNroReparacion());
+            if (posRep != -1)
+            {
+                Reparacion r = _repo.leer(posRep);
+                if (!r.getEliminado())
+                {
+                    hayHistorial = true;
+                    cout << "  [*] Orden #" << r.getNroReparacion()
+                         << " | Ingreso: " << r.getFechaIngreso().toString()
+                         << " | Estado: " << getNombreEstado(r.getEstado()) << endl;
+                    cout << "      Trabajo asignado: " << d.getDetalleFalla() << endl;
+                    cout << "      Costo facturado:  $" << d.getImporte() << endl;
+                    cout << "  --------------------------------------------------------------------" << endl;
+                }
+            }
+        }
+    }
+
+    if (!hayHistorial)
+    {
+        cout << "  (Este equipo no registra ninguna orden de reparacion en el sistema)" << endl;
+    }
 }

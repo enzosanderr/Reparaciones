@@ -17,10 +17,6 @@ void EmpleadoManager::cargarInicialesSiVacio()
     _repo.crear(Empleado("123456", "Claudio Andres", "Arce"));
 }
 
-bool EmpleadoManager::legajoUnico(const string &legajo)
-{
-    return _repo.buscarPorLegajo(legajo) == -1;
-}
 
 void EmpleadoManager::cargarCamposEditables(Empleado &e)
 {
@@ -364,8 +360,9 @@ void EmpleadoManager::menuConsultas()
         cout << "=== CONSULTAS Y LISTADOS: EMPLEADOS ===" << endl << endl;
         cout << "1. Listado ordenado por Apellido" << endl;
         cout << "2. Consulta individual por Legajo" << endl;
-        cout << "3. Ver informe de carga de trabajo (Tareas pendientes)" << endl;
-        cout << "4. Ver historial de empleados inactivos (Bajas)" << endl;
+        cout << "3. Ver informe de carga de trabajo (Resumen + Detalles)" << endl;
+        cout << "4. Historial de reparaciones finalizadas por Tecnico" << endl;
+        cout << "5. Ver historial de empleados inactivos (Bajas)" << endl;
         cout << "0. Volver al menu anterior" << endl;
 
         opcion = cargarEntero("\nSeleccione una opcion: ");
@@ -388,6 +385,11 @@ void EmpleadoManager::menuConsultas()
             system("pause");
             break;
         case 4:
+            system("cls");
+            historialReparacionesFinalizadas();
+            system("pause");
+            break;
+        case 5:
             system("cls");
             listadoInactivos();
             system("pause");
@@ -507,7 +509,43 @@ void EmpleadoManager::informeCargaTrabajo()
         }
     }
     cout << "----------------------------------------------------------------------" << endl;
-    if (!hayTecnicos) cout << "No hay tecnicos activos registrados." << endl;
+    if (!hayTecnicos) {
+        cout << "No hay tecnicos activos registrados." << endl;
+        return;
+    }
+
+    int verDetalle = cargarEntero("\n¨Desea ver el detalle de tareas de un tecnico en particular? (1=Si, 0=No): ");
+    if (verDetalle == 1)
+    {
+        string legajo = cargarTexto("\nIngrese el legajo del tecnico: ", 9);
+        int pos = _repo.buscarPorLegajo(legajo);
+        if (pos == -1 || _repo.leer(pos).getEliminado())
+        {
+            cout << " > ERROR: El legajo no corresponde a un empleado activo." << endl;
+            return;
+        }
+
+        system("cls");
+        Empleado emp = _repo.leer(pos);
+        cout << "=== TAREAS PENDIENTES: " << emp.getNombre() << " " << emp.getApellido() << " (Legajo: " << legajo << ") ===" << endl << endl;
+
+        ReparacionArchivo repoRep;
+        int cantRep = repoRep.getCantidadRegistros();
+        bool hayTareas = false;
+
+        for (int i = 0; i < cantRep; i++)
+        {
+            Reparacion r = repoRep.leer(i);
+            if (!r.getEliminado() && r.getLegajo() == legajo && (r.getEstado() == 1 || r.getEstado() == 2))
+            {
+                cout << "  [*] Orden #" << r.getNroReparacion()
+                     << " | Ingreso: " << r.getFechaIngreso().toString()
+                     << " | Estado: " << (r.getEstado() == 1 ? "Sin iniciar" : "En proceso") << endl;
+                hayTareas = true;
+            }
+        }
+        if (!hayTareas) cout << "  (Este tecnico no registra tareas pendientes en el taller actualmente)" << endl;
+    }
 }
 
 void EmpleadoManager::listadoInactivos()
@@ -531,4 +569,70 @@ void EmpleadoManager::listadoInactivos()
         }
     }
     if (!hayInactivos) cout << "No se encontraron empleados inactivos en el sistema." << endl;
+}
+
+void EmpleadoManager::historialReparacionesFinalizadas()
+{
+    cout << "=== HISTORIAL DE REPARACIONES FINALIZADAS POR TECNICO ===" << endl << endl;
+    string legajo = cargarTexto("Ingrese el legajo del tecnico: ", 9);
+
+    int pos = _repo.buscarPorLegajo(legajo);
+    if (pos == -1 || _repo.leer(pos).getEliminado())
+    {
+        cout << " > ERROR: El legajo no corresponde a un empleado activo." << endl;
+        return;
+    }
+
+    Empleado emp = _repo.leer(pos);
+
+    Fecha desde, hasta;
+    bool rangoValido = false;
+    do {
+        desde = cargarFecha("Fecha desde (F. Entrega):");
+        if (!desde.esValida()) {
+            cout << " > ERROR: La fecha 'Desde' es invalida." << endl;
+            continue;
+        }
+
+        hasta = cargarFecha("Fecha hasta (F. Entrega):");
+        if (!hasta.esValida()) {
+            cout << " > ERROR: La fecha 'Hasta' es invalida." << endl;
+            continue;
+        }
+
+        if (hasta.aNumero() < desde.aNumero()) {
+            cout << " > ERROR LOGICO: La fecha 'Hasta' no puede ser anterior a la fecha 'Desde'.\n" << endl;
+        } else {
+            rangoValido = true;
+        }
+    } while (!rangoValido);
+
+    system("cls");
+    cout << "=== TRABAJOS ENTREGADOS POR: " << emp.getNombre() << " " << emp.getApellido() << " ===" << endl;
+    cout << "Periodo analizado: " << desde.toString() << " hasta " << hasta.toString() << endl;
+    cout << "----------------------------------------------------------------------" << endl;
+
+    ReparacionArchivo repoRep;
+    int cant = repoRep.getCantidadRegistros();
+    bool hayRegistros = false;
+
+    for (int i = 0; i < cant; i++)
+    {
+        Reparacion r = repoRep.leer(i);
+        long f = r.getFechaEntrega().aNumero();
+
+        //filtros
+        if (!r.getEliminado() && r.getLegajo() == legajo && r.getEstado() == 3 && f >= desde.aNumero() && f <= hasta.aNumero())
+        {
+            cout << "  [v] Orden #" << r.getNroReparacion()
+                 << " | Entregado el: " << r.getFechaEntrega().toString() << endl;
+            hayRegistros = true;
+        }
+    }
+
+    if (!hayRegistros)
+    {
+        cout << "No se encontraron ordenes terminadas para este tecnico en el periodo indicado." << endl;
+    }
+    cout << "----------------------------------------------------------------------" << endl;
 }

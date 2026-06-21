@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include "clienteArchivo.h"
 #include "reparacionArchivo.h"
 #include "detalleReparacionArchivo.h"
@@ -13,16 +14,17 @@ public:
     void baja();
     void modificacion();
     void menuConsultas();
+    void mostrar(const Cliente &c);
 
 private:
+    void cargarCamposEditables(Cliente &c);
+    Cliente cargarDatos(bool &cancelado);
+
     void listado();
     void listadoPorApellido();
-    void listadoInactivos();
+    void listadoPorTipo();
     void consultaPorCuit();
-    Cliente cargarDatos(bool &cancelado);
-    void cargarCamposEditables(Cliente &c);
-    void mostrar(const Cliente &c);
-    bool cuitUnico(const std::string &cuit);
+    void listadoInactivos();
     std::string seleccionarCliente();
     void mostrarReparacionesActivasPorCliente(const std::string& cuit);
     void mostrarParqueEquiposPorCliente(const std::string& cuit);

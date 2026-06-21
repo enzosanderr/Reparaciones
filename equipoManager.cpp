@@ -9,10 +9,6 @@ using namespace std;
 
 EquipoManager::EquipoManager() : _repo(), _repoCliente() {}
 
-bool EquipoManager::nroEquipoUnico(int nro)
-{
-    return _repo.buscarPorNumero(nro) == -1;
-}
 
 bool EquipoManager::clienteExiste(const string &cuit)
 {
@@ -123,6 +119,10 @@ void EquipoManager::mostrar(const Equipo &e)
     cout << "Marca y modelo: " << e.getMarca() << endl;
     cout << "Tipo: " << e.getTipoEquipoString() << endl;
     cout << "Fecha de ingreso: " << e.getFechaIngreso().toString() << endl;
+
+    bool enTaller = equipoEnReparacionActiva(e.getNroEquipo());
+    cout << "Estado actual:    " << (enTaller ? " [EN REPARACION]" : " [DISPONIBLE]") << endl;
+
     cout << "-----------------------------------" << endl;
 }
 

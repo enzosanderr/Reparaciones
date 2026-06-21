@@ -1,6 +1,7 @@
 # Code::Blocks build output
 bin/
 obj/
+exports/
 
 # Code::Blocks per-user files
 *.layout
