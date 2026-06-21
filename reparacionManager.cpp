@@ -195,7 +195,7 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
             continue;
         }
 
-     //validacion de estado
+        //validacion de estado
         if (equipoTieneReparacionAbierta(nroEquipo))
         {
             cout << " > ERROR: El equipo #" << nroEquipo << " ya se encuentra en el taller" << endl;
@@ -326,6 +326,8 @@ void ReparacionManager::alta()
 
     int cargados = cargarDetalles(nro, cuit);
 
+    //fechs
+
     if (cargados > 0)
     {
         Fecha fe;
@@ -378,7 +380,11 @@ void ReparacionManager::baja()
     cout << "\n=== BAJA DE REPARACION ===" << endl;
 
     int nro = seleccionarReparacion();
-    if (nro <= 0) return;
+    if (nro <= 0)
+    {
+        cout << " >> Operacion cancelada." << endl;
+        return;
+    }
 
     int pos = _repo.buscarPorNumero(nro);
     if (pos == -1)
@@ -528,11 +534,11 @@ void ReparacionManager::modificacion()
 
     int nro = seleccionarReparacion();
 
-    if(nro == -1) return;
-
+    if(nro <= 0 ) return;
 
     int pos = _repo.buscarPorNumero(nro);
-    if (pos == -1) {
+    if (pos == -1)
+    {
         cout << " > La reparacion no existe en el archivo." << endl;
         system("pause");
         return;
@@ -564,137 +570,152 @@ void ReparacionManager::modificacion()
 
         switch (opcion)
         {
-            case 1:
+        case 1:
+        {
+            string nuevoCuit = cargarTexto("Ingrese el nuevo CUIT: ", 14);
+
+            if (_repoCliente.buscarPorCuit(nuevoCuit) == -1)
             {
-                string nuevoCuit = cargarTexto("Ingrese el nuevo CUIT: ", 14);
-
-                if (_repoCliente.buscarPorCuit(nuevoCuit) == -1)
-                {
-                    cout << " > ERROR: El cliente no existe o esta dado de baja." << endl;
-                }
-                else
-                {
-                    r.setCuit(nuevoCuit);
-
-                    if (_repo.actualizar(pos, r)) {
-                        cout << " >> CUIT modificado exitosamente en el archivo." << endl;
-                    } else {
-                        cout << " > ERROR: No se pudo actualizar el CUIT en el disco." << endl;
-                    }
-                }
-                system("pause");
-                break;
+                cout << " > ERROR: El cliente no existe o esta dado de baja." << endl;
             }
-            case 2:
+            else
             {
-                string nuevoLegajo = cargarTexto("Ingrese el nuevo Legajo: ", 9);
-
-                if (_repoEmpleado.buscarPorLegajo(nuevoLegajo) == -1)
-                {
-                    cout << " > ERROR: El empleado no existe o esta dado de baja." << endl;
-                }
-                else
-                {
-                    r.setLegajo(nuevoLegajo);
-
-
-                    if (_repo.actualizar(pos, r)) {
-                        cout << " >> Legajo modificado exitosamente en el archivo." << endl;
-                    } else {
-                        cout << " > ERROR: No se pudo actualizar el Legajo en el disco." << endl;
-                    }
-                }
-                system("pause");
-                break;
-            }
-            case 3:
-            {
-                Fecha nuevaFecha;
-                bool fechaValida = false;
-
-                do
-                {
-                    nuevaFecha = cargarFecha("Ingrese la NUEVA fecha de entrega:");
-
-                    if (!nuevaFecha.esValida())
-                    {
-                        cout << " > ERROR: La fecha ingresada no existe en el calendario." << endl;
-                    }
-                    else if (nuevaFecha.aNumero() < r.getFechaIngreso().aNumero())
-                    {
-                        cout << " > ERROR: La fecha de entrega no puede ser anterior a hoy." << endl;
-                        cout << "    Fecha de ingreso de esta orden: " << r.getFechaIngreso().toString() << endl;
-                    }
-                    else if(nuevaFecha.aNumero() < r.getFechaIngreso().aNumero())
-                    {
-                        cout << " > ERROR: La fecha de entrega no puede ser anterior a la fecha de ingreso del equipo." << endl;
-                    }else{
-
-                        fechaValida = true;
-                    }
-                }
-                while (!fechaValida);
-
-                r.setFechaEntrega(nuevaFecha);
-
-                r.setEstado(3);
+                r.setCuit(nuevoCuit);
 
                 if (_repo.actualizar(pos, r))
                 {
-                    cout << " >> Fecha de entrega modificada y estado actualizado a TERMINADA!." << endl;
+                    cout << " >> CUIT modificado exitosamente en el archivo." << endl;
                 }
                 else
                 {
-                    cout << " > ERROR: No se pudo guardar la nueva fecha en el archivo." << endl;
+                    cout << " > ERROR: No se pudo actualizar el CUIT en el disco." << endl;
                 }
-                system("pause");
-                break;
             }
+            system("pause");
+            break;
+        }
+        case 2:
+        {
+            string nuevoLegajo = cargarTexto("Ingrese el nuevo Legajo: ", 9);
 
-            case 4:
+            if (_repoEmpleado.buscarPorLegajo(nuevoLegajo) == -1)
             {
-                cout << "\n--- CAMBIAR ESTADO DE TRABAJO ---" << endl;
-                cout << "1. Sin iniciar" << endl;
-                cout << "2. En proceso" << endl;
-                cout << "3. Terminada" << endl;
-                int nuevoEstado = cargarEntero("Seleccione el nuevo estado: ");
-
-                if(nuevoEstado < 1 || nuevoEstado > 3) {
-                    cout << " > ERROR: Seleccion de estado invalida." << endl;
-                } else {
-                    r.setEstado(nuevoEstado);
-                    if (_repo.actualizar(pos, r)) {
-                        cout << " >> Estado actualizado exitosamente a: " << getNombreEstado(nuevoEstado) << endl;
-                    } else {
-                        cout << " > ERROR: No se pudo guardar el nuevo estado en el disco." << endl;
-                    }
-                }
-                system("pause");
-                break;
+                cout << " > ERROR: El empleado no existe o esta dado de baja." << endl;
             }
+            else
+            {
+                r.setLegajo(nuevoLegajo);
 
-            case 0:
-                break;
 
-            default:
-                cout << " > Opcion incorrecta." << endl;
-                system("pause");
-                break;
+                if (_repo.actualizar(pos, r))
+                {
+                    cout << " >> Legajo modificado exitosamente en el archivo." << endl;
+                }
+                else
+                {
+                    cout << " > ERROR: No se pudo actualizar el Legajo en el disco." << endl;
+                }
+            }
+            system("pause");
+            break;
+        }
+{
+            Fecha nuevaFecha;
+            bool fechaValida = false;
+
+            do
+
+            {
+                nuevaFecha = cargarFecha("Ingrese la NUEVA fecha de entrega:");
+
+                if (!nuevaFecha.esValida())
+                {
+                    cout << " > ERROR: La fecha ingresada no existe en el calendario." << endl;
+                }
+                else if (nuevaFecha.aNumero() < r.getFechaIngreso().aNumero())
+                {
+                    cout << " > ERROR: La fecha de entrega no puede ser anterior a la fecha de ingreso." << endl;
+                    cout << "    Fecha de ingreso de esta orden: " << r.getFechaIngreso().toString() << endl;
+                }
+                else
+                {
+                    fechaValida = true;
+                }
+            }
+            while (!fechaValida);
+
+            r.setFechaEntrega(nuevaFecha);
+            r.setEstado(3);
+
+            if (_repo.actualizar(pos, r))
+            {
+                cout << " >> Fecha de entrega modificada y estado actualizado a TERMINADA!." << endl;
+            }
+            else
+            {
+                cout << " > ERROR: No se pudo guardar la nueva fecha en el archivo." << endl;
+            }
+            system("pause");
+            break;
+        }
+
+        case 4:
+        {
+            cout << "\n--- CAMBIAR ESTADO DE TRABAJO ---" << endl;
+            cout << "1. Sin iniciar" << endl;
+            cout << "2. En proceso" << endl;
+            cout << "3. Terminada" << endl;
+            int nuevoEstado = cargarEntero("Seleccione el nuevo estado: ");
+
+            if(nuevoEstado < 1 || nuevoEstado > 3)
+            {
+                cout << " > ERROR: Seleccion de estado invalida." << endl;
+            }
+            else
+            {
+                r.setEstado(nuevoEstado);
+                if (_repo.actualizar(pos, r))
+                {
+                    cout << " >> Estado actualizado exitosamente a: " << getNombreEstado(nuevoEstado) << endl;
+                }
+                else
+                {
+                    cout << " > ERROR: No se pudo guardar el nuevo estado en el disco." << endl;
+                }
+            }
+            system("pause");
+            break;
+        }
+
+        case 0:
+            break;
+
+        default:
+            cout << " > Opcion incorrecta." << endl;
+            system("pause");
+            break;
         }
     }
     while (opcion != 0);
 }
 
-string ReparacionManager::getNombreEstado(int estado) {
-    switch(estado) {
-        case 1: return "Sin iniciar";
-        case 2: return "En proceso";
-        case 3: return "Terminada";
-        default: return "Desconocido";
+string ReparacionManager::getNombreEstado(int estado)
+{
+    switch(estado)
+    {
+    case 1:
+        return "Sin iniciar";
+    case 2:
+        return "En proceso";
+    case 3:
+        return "Terminada";
+    default:
+        return "Desconocido";
     }
 }
 
-void ReparacionManager::listarPorEstado() {
+void ReparacionManager::listarPorEstado()
+{
     system("cls");
     cout << "=== LISTAR REPARACIONES POR ESTADO ===" << endl;
     cout << "1. Ver reparaciones: SIN INICIAR" << endl;
@@ -702,7 +723,8 @@ void ReparacionManager::listarPorEstado() {
     cout << "3. Ver reparaciones: TERMINADAS" << endl;
     int estadoBuscado = cargarEntero("\nSeleccione el estado que desea filtrar: ");
 
-    if (estadoBuscado < 1 || estadoBuscado > 3) {
+    if (estadoBuscado < 1 || estadoBuscado > 3)
+    {
         cout << " > Opcion invalida." << endl;
         system("pause");
         return;
@@ -715,17 +737,20 @@ void ReparacionManager::listarPorEstado() {
     cout << "=== LISTADO DE REPARACIONES [" << getNombreEstado(estadoBuscado) << "] ===" << endl;
     cout << "------------------------------------------------------------------------" << endl;
 
-    for (int i = 0; i < cant; i++) {
+    for (int i = 0; i < cant; i++)
+    {
         Reparacion r = _repo.leer(i);
 
-        if (!r.getEliminado() && r.getEstado() == estadoBuscado) {
+        if (!r.getEliminado() && r.getEstado() == estadoBuscado)
+        {
             mostrar(r);
             cout << "------------------------------------------------------------------------" << endl;
             hayRegistros = true;
         }
     }
 
-    if (!hayRegistros) {
+    if (!hayRegistros)
+    {
         cout << " > No se encontraron reparaciones en estado: " << getNombreEstado(estadoBuscado) << endl;
     }
 
@@ -735,38 +760,55 @@ void ReparacionManager::listarPorEstado() {
 int ReparacionManager::seleccionarReparacion() {
     int opcion;
     do {
-        cout << "\n=== BUSCAR REPARACION ===" << endl;
-        cout << "1. Buscar por ID (Nro de Reparacion)" << endl;
+        system("cls");
+        cout << "=== SELECCIONAR ORDEN DE REPARACION ===" << endl;
+        cout << "1. Buscar ingresando el ID directamente" << endl;
         cout << "2. Buscar por CUIT de Cliente" << endl;
-        cout << "3. Ver ultimas 10 reparaciones" << endl;
-        cout << "0. Cancelar" << endl;
+        cout << "0. Cancelar operacion" << endl;
+        opcion = cargarEntero("\nSeleccione una opcion de busqueda: ");
 
-        opcion = cargarEntero("Seleccione opcion: ");
+        switch (opcion) {
+            case 1: {
+                int id = cargarEntero("Ingrese el ID de la reparacion: ");
 
-        switch(opcion) {
-            case 1: return buscarPorId();
-            case 2: return buscarPorCuit();
-            case 3: return seleccionarDeUltimasDiez();
-            case 0: return -1;
-            default: cout << " > Opcion invalida." << endl;
+                if (_repo.buscarPorNumero(id) != -1) return id;
+
+                cout << " > El ID ingresado no corresponde a una reparacion activa." << endl;
+                system("pause");
+                break;
+            }
+            case 2: {
+                int idEncontrado = buscarPorCuit();
+                if (idEncontrado > 0) return idEncontrado;
+                break;
+            }
+            case 0:
+                return 0;
+            default:
+                cout << " > Opcion incorrecta." << endl;
+                system("pause");
+                break;
         }
     } while (opcion != 0);
 
-    return -1;
+    return 0;
 }
 
-int ReparacionManager::buscarPorId() {
+int ReparacionManager::buscarPorId()
+{
     system("cls");
     int nro = cargarEntero("Ingrese el ID (Nro Reparacion) a buscar: ");
 
     int pos = _repo.buscarPorNumero(nro);
-    if (pos == -1) {
+    if (pos == -1)
+    {
         cout << " > No se encontro ninguna reparacion con ese ID." << endl;
         return -1;
     }
 
     Reparacion r = _repo.leer(pos);
-    if (r.getEliminado()) {
+    if (r.getEliminado())
+    {
         cout << " > La reparacion con ese ID se encuentra dada de baja." << endl;
         return -1;
     }
@@ -775,96 +817,91 @@ int ReparacionManager::buscarPorId() {
 }
 
 int ReparacionManager::buscarPorCuit() {
-    system("cls");
-    string cuitBuscado = cargarCadena("Ingrese el CUIT del cliente: ");
+    string cuit;
+    int opcion = 1;
 
-    int cant = _repo.getCantidadRegistros();
-    if (cant == 0) {
-        cout << " > No hay reparaciones registradas en el sistema." << endl;
-        return -1;
-    }
+    while (opcion == 1) {
+        system("cls");
+        cout << "=== BUSCAR REPARACION POR CUIT ===" << endl;
+        cuit = cargarTexto("Ingrese el CUIT del cliente (o '0' para cancelar): ", 14);
 
-    Reparacion *v = new Reparacion[cant];
+        if (cuit == "0") return 0;
 
-    _repo.leerTodos(v, cant);
+        int cantidad = _repo.getCantidadRegistros();
+        int coincidencias = 0;
+        int ultimoIdEncontrado = -1;
 
-    bool hay = false;
-    cout << "\n--- Reparaciones del CUIT " << cuitBuscado << " ---" << endl;
-
-    for (int i = 0; i < cant; i++) {
-        if (!v[i].getEliminado() && v[i].getCuit() == cuitBuscado) {
-            mostrar(v[i]);
-
-            hay = true;
+        for (int i = 0; i < cantidad; i++) {
+            Reparacion r = _repo.leer(i);
+            if (!r.getEliminado() && r.getCuit() == cuit) {
+                coincidencias++;
+                ultimoIdEncontrado = r.getNroReparacion();
+            }
         }
+
+
+        if (coincidencias == 0) {
+            cout << "\n > No se encontraron reparaciones activas para el CUIT: " << cuit << endl;
+            cout << "1. Intentar con otro CUIT" << endl;
+            cout << "0. Volver atras" << endl;
+            opcion = cargarEntero("\nSeleccione una opcion: ");
+            if (opcion == 0) return 0;
+            continue;
+        }
+
+
+        system("cls");
+        cout << "=== REPARACIONES ENCONTRADAS PARA EL CUIT: " << cuit << " ===" << endl;
+        cout << "----------------------------------------------------------------------" << endl;
+
+        for (int i = 0; i < cantidad; i++) {
+            Reparacion r = _repo.leer(i);
+            if (!r.getEliminado() && r.getCuit() == cuit) {
+
+                cout << " ID Orden: #" << r.getNroReparacion()
+                     << " | Ingreso: " << r.getFechaIngreso().toString()
+                     << " | Estado: " << getNombreEstado(r.getEstado()) << endl;
+            }
+        }
+        cout << "----------------------------------------------------------------------" << endl;
+
+        int idSeleccionado = cargarEntero("\nIngrese el ID de la orden que desea seleccionar (0 para cancelar): ");
+        if (idSeleccionado == 0) return 0;
+
+        int posValidar = _repo.buscarPorNumero(idSeleccionado);
+        if (posValidar != -1) {
+            Reparacion rValidar = _repo.leer(posValidar);
+            if (rValidar.getCuit() == cuit && !rValidar.getEliminado()) {
+                return idSeleccionado;
+            }
+        }
+
+        cout << "\n > ERROR: El ID ingresado no corresponde a ninguna de las opciones listadas." << endl;
+        system("pause");
     }
 
-    delete[] v;
-
-    if (!hay) {
-        cout << " > No se encontraron reparaciones activas para ese CUIT." << endl;
-        return -1;
-    }
-
-    // usuario elige de la lista
-    return cargarEntero("Ingrese el Nro de Reparacion que desea seleccionar (o -1 para cancelar): ");
+    return 0;
 }
 
-int ReparacionManager::seleccionarDeUltimasDiez() {
-    system("cls");
-    int cant = _repo.getCantidadRegistros();
-    if (cant == 0) {
-        cout << " > No hay reparaciones registradas en el sistema." << endl;
-        return -1;
-    }
-
-    Reparacion *v = new Reparacion[cant];
-    _repo.leerTodos(v, cant);
-
-    int inicio;
-    if (cant > 10) {
-        inicio = cant - 10;
-    } else {
-        inicio = 0;
-    }
-
-    bool hay = false;
-
-    //muestra registros
-    cout << "\n--- Ultimas Reparaciones Registradas ---" << endl;
-    for (int i = inicio; i < cant; i++) {
-        if (!v[i].getEliminado()) {
-            mostrar(v[i]);
-
-            hay = true;
-        }
-    }
-
-    delete[] v;
-
-    if (!hay) {
-        cout << " > Las ultimas reparaciones registradas estan dadas de baja." << endl;
-        return -1;
-    }
-
-
-    return cargarEntero("Ingrese el Nro de Reparacion que desea seleccionar (o -1 para cancelar): ");
-}
-
-bool ReparacionManager::equipoTieneReparacionAbierta(int nroEquipo) {
+bool ReparacionManager::equipoTieneReparacionAbierta(int nroEquipo)
+{
     int cantDetalles = _repoDetalle.getCantidadRegistros();
 
-    for (int i = 0; i < cantDetalles; i++) {
+    for (int i = 0; i < cantDetalles; i++)
+    {
         DetalleReparacion d = _repoDetalle.leer(i);
 
-        if (d.getNroEquipo() == nroEquipo && !d.getEliminado()) {
+        if (d.getNroEquipo() == nroEquipo && !d.getEliminado())
+        {
 
             int posReparacion = _repo.buscarPorNumero(d.getNroReparacion());
 
-            if (posReparacion != -1) {
+            if (posReparacion != -1)
+            {
                 Reparacion rep = _repo.leer(posReparacion);
 
-                if (rep.getEstado() == 1 || rep.getEstado() == 2) {
+                if (rep.getEstado() == 1 || rep.getEstado() == 2)
+                {
                     return true;
                 }
             }
@@ -907,9 +944,12 @@ void ReparacionManager::listado()
 
         system("cls");
 
-        if (opcion == 1) {
+        if (opcion == 1)
+        {
             cout << "=== LISTADO DE TODAS LAS REPARACIONES ACTIVAS ===\n" << endl;
-        } else {
+        }
+        else
+        {
             cout << "=== LISTADO DE REPARACIONES [" << getNombreEstado(opcion - 1) << "] ===\n" << endl;
         }
 
@@ -936,7 +976,8 @@ void ReparacionManager::listado()
 
         system("pause");
 
-    } while (opcion != 0);
+    }
+    while (opcion != 0);
 }
 
 void ReparacionManager::listadoPorFechaEntrega()

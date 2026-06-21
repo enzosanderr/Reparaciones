@@ -1,5 +1,7 @@
+# Code::Blocks build output
 bin/
 obj/
+
+# Code::Blocks per-user files
 *.layout
 *.depend
-*.exe
