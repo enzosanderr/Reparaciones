@@ -374,7 +374,7 @@ void ClienteManager::listado()
 
 void ClienteManager::listadoPorApellido()
 {
-    cout << "\n=== LISTADO DE CLIENTES (ORDENADO POR APELLIDO) ===" << endl;
+    cout << "\n=== LISTADO DE CLIENTES (ORDENADO POR APELLIDO) ===" << endl<<endl;
     int cantidad = _repo.getCantidadRegistros();
     if (cantidad == 0)
     {

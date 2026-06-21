@@ -71,6 +71,8 @@
 		<Unit filename="exportarCsvMenu.h" />
 		<Unit filename="fecha.cpp" />
 		<Unit filename="fecha.h" />
+		<Unit filename="generarDatos.cpp" />
+		<Unit filename="generarDatos.h" />
 		<Unit filename="informeManager.cpp" />
 		<Unit filename="informeManager.h" />
 		<Unit filename="informeMenu.cpp" />

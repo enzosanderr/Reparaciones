@@ -545,7 +545,7 @@ void InformeManager::equiposReincidentes()
             cout << "  Cliente - CUIT: " << e.getCuit() << endl << endl;
             cout << "  Cantidad de reparaciones finalizadas:   " << cantidad << endl;
             cout << detalles.str();
-            cout << "------------------------------------------------------------------" << endl;
+            cout << "\n-----------------------------------------------------------------------------------------------" << endl;
             hayReincidentes = true;
         }
     }

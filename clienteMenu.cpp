@@ -23,5 +23,4 @@ void ClienteMenu::ejecutarOpcion(int opcion) {
         case 4: _manager.menuConsultas(); break;
         case 0: return;
     }
-   pausar();
 }

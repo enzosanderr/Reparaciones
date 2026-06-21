@@ -8,7 +8,7 @@ InformeMenu::InformeMenu() {
 
 void InformeMenu::mostrarOpciones() {
    cout << "=== MENU INFORMES (POR RANGO DE FECHAS) ===" << endl;
-   cout << "1. Recaudacion total del taller" << endl;
+   cout << "1. Recaudacion total MENSUAL del taller" << endl;
    cout << "2. Recaudacion detallada por cliente" << endl;
    cout << "3. Estadistica de reparaciones por tipo de equipo" << endl;
    cout << "4. Productividad y facturacion por empleado" << endl;

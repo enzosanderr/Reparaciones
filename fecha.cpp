@@ -48,5 +48,5 @@ void Fecha::setFechaActual() {
     // Asignar los valores a la fecha
     _dia = localTime->tm_mday;
     _mes = localTime->tm_mon + 1; // tm_mon va de 0 a 11
-    _anio = localTime->tm_year + 1900; // tm_year es el número de años desde 1900
+    _anio = localTime->tm_year + 1900; // tm_year es el numero de anios desde 1900
 }
