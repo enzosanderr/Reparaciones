@@ -2,7 +2,8 @@
 #include "equipoManager.h"
 #include "utils.h"
 #include "clienteManager.h"
-#include "reparacionManager.h"
+#include "reparacionArchivo.h"
+#include "detalleReparacionArchivo.h"
 
 using namespace std;
 
@@ -27,7 +28,8 @@ bool EquipoManager::cargarCamposEditables(Equipo &e)
     do
     {
         cuit = cargarTexto("CUIT del cliente propietario (o '0' para volver): ", 14);
-        if (cuit == "0") {
+        if (cuit == "0")
+        {
             return false;
         }
 
@@ -156,15 +158,15 @@ void EquipoManager::alta()
 void EquipoManager::baja()
 {
     system("cls");
-    cout << "=== BAJA DE EQUIPO ===" << endl;
+    cout << "=== BAJA DE EQUIPO ===" << endl<<endl;
 
-    int nroEquipo = cargarEntero("Ingrese el numero de equipo a dar de baja (0 para cancelar): ");
-    if (nroEquipo == 0) return;
+    int nroEquipo = seleccionarEquipo();
+    if (nroEquipo <= 0) return;
 
     int pos = _repo.buscarPorNumero(nroEquipo);
     if (pos == -1)
     {
-        cout << " > ERROR: El equipo #" << nroEquipo << " no existe en el sistema." << endl;
+        cout << " > ERROR: El equipo #" << nroEquipo << " no se encontro en el sistema." << endl;
         system("pause");
         return;
     }
@@ -178,9 +180,8 @@ void EquipoManager::baja()
         return;
     }
 
-
-    ReparacionManager mgrReparacion;
-    if (mgrReparacion.equipoTieneReparacionAbierta(nroEquipo))
+    //verificacion equipo en taller
+    if (equipoEnReparacionActiva(nroEquipo))
     {
         cout << " > ERROR: No se puede eliminar el equipo. Actualmente se encuentra en el taller" << endl;
         cout << "   asociado a una orden de reparacion abierta o en proceso." << endl;
@@ -195,7 +196,7 @@ void EquipoManager::baja()
     mostrar(e);
     cout << "--------------------------------------------------" << endl;
 
-    int confirmar = cargarEntero("¨Confirma la baja logica de este equipo? (1=Si, 0=No): ");
+    int confirmar = cargarEntero("¨Confirma la baja de este equipo? (1=Si, 0=No): ");
     if (confirmar != 1)
     {
         cout << " >> Operacion cancelada." << endl;
@@ -218,24 +219,109 @@ void EquipoManager::baja()
 void EquipoManager::modificacion()
 {
     cout << "\n=== MODIFICACION DE EQUIPO ===" << endl;
-    int nro = cargarEntero("Ingrese numero de equipo a modificar: ");
+
+    int nro = seleccionarEquipo();
+    if (nro <= 0) return;
 
     int pos = _repo.buscarPorNumero(nro);
-    if (pos == -1)
-    {
-        cout << "\nEquipo no encontrado o esta eliminado." << endl;
-        return;
-    }
+    if (pos == -1) return;
 
     Equipo e = _repo.leer(pos);
-    cout << "\nEquipo actual:" << endl;
-    mostrar(e);
 
-    cout << "\nIngrese los nuevos datos:" << endl;
-    cargarCamposEditables(e);
+    int opcion;
+    do
+    {
+        system("cls");
+        cout << "=== MODIFICAR EQUIPO #" << e.getNroEquipo() << " ===" << endl;
+        mostrar(e);
+        cout << "--------------------------------------------------" << endl;
+        cout << "1. Modificar CUIT Cliente" << endl;
+        cout << "2. Modificar Descripcion" << endl;
+        cout << "3. Modificar Marca y Modelo" << endl;
+        cout << "4. Modificar Tipo de Equipo" << endl;
+        cout << "5. Modificar Fecha de Ingreso" << endl;
+        cout << "0. Volver al menu anterior" << endl;
 
-    if (_repo.actualizar(pos, e)) cout << "\nEquipo modificado exitosamente." << endl;
-    else cout << "\nError al modificar el equipo." << endl;
+        opcion = cargarEntero("\nSeleccione una opcion a modificar: ");
+
+        switch (opcion)
+        {
+        case 1:
+        {
+            string nuevoCuit = cargarTexto("Ingrese el nuevo CUIT: ", 14);
+            if (_repoCliente.buscarPorCuit(nuevoCuit) == -1)
+            {
+                cout << " > ERROR: El cliente no existe o esta dado de baja." << endl;
+            }
+            else
+            {
+                e.setCuit(nuevoCuit);
+                if (_repo.actualizar(pos, e)) cout << " >> CUIT modificado exitosamente." << endl;
+                else cout << " > ERROR: No se pudo actualizar en el disco." << endl;
+            }
+            system("pause");
+            break;
+        }
+        case 2:
+        {
+            string nuevaDesc = cargarTexto("Nueva descripcion: ", 49);
+            e.setDescripcion(nuevaDesc);
+            if (_repo.actualizar(pos, e)) cout << " >> Descripcion modificada." << endl;
+            system("pause");
+            break;
+        }
+        case 3:
+        {
+            string nuevaMarca = cargarTexto("Nueva marca y modelo: ", 29);
+            e.setMarca(nuevaMarca);
+            if (_repo.actualizar(pos, e)) cout << " >> Marca modificada." << endl;
+            system("pause");
+            break;
+        }
+        case 4:
+        {
+            int nuevoTipo;
+            do
+            {
+                nuevoTipo = cargarEntero("Nuevo Tipo (1=PC, 2=Notebook, 3=Impresora, 4=Periferico, 5=Celular): ");
+                if(nuevoTipo < 1 || nuevoTipo > 5) cout << " > Solo 1 a 5." << endl;
+            }
+            while (nuevoTipo < 1 || nuevoTipo > 5);
+
+            e.setTipoEquipo(nuevoTipo);
+            if (_repo.actualizar(pos, e)) cout << " >> Tipo de equipo modificado." << endl;
+            system("pause");
+            break;
+        }
+        case 5:
+        {
+            Fecha nuevaFecha;
+            Fecha hoy;
+            hoy.setFechaActual();
+            bool fechaOk = false;
+            do
+            {
+                nuevaFecha = cargarFecha("Nueva fecha de ingreso:");
+                if (!nuevaFecha.esValida()) cout << " > Fecha invalida." << endl;
+                else if (nuevaFecha.aNumero() > hoy.aNumero()) cout << " > No puede ser fecha futura." << endl;
+                else fechaOk = true;
+            }
+            while (!fechaOk);
+
+            e.setFechaIngreso(nuevaFecha);
+            if (_repo.actualizar(pos, e)) cout << " >> Fecha modificada." << endl;
+            system("pause");
+            break;
+        }
+        case 0:
+            break;
+        default:
+            cout << " > Opcion incorrecta." << endl;
+            system("pause");
+            break;
+        }
+    }
+    while (opcion != 0);
 }
 
 void EquipoManager::listado()
@@ -303,8 +389,6 @@ void EquipoManager::listadoPorFechaIngreso()
     delete[] v;
 }
 
-
-
 int EquipoManager::contarEquiposPorCuit(const string &cuit)
 {
     int cant = _repo.getCantidadRegistros();
@@ -320,3 +404,170 @@ int EquipoManager::contarEquiposPorCuit(const string &cuit)
     }
     return contador;
 }
+
+int EquipoManager::seleccionarEquipo()
+{
+    int opcion;
+    do
+    {
+        system("cls");
+        cout << "=== SELECCIONAR EQUIPO ===" << endl<<endl;
+        cout << "1. Ingresar ID de equipo directamente" << endl;
+        cout << "2. Buscar por CUIT del Cliente" << endl;
+        cout << "3. Listar todos los equipos activos" << endl;
+        cout << "0. Cancelar" << endl<<endl;
+
+        opcion = cargarEntero("\nSeleccione una opcion de busqueda: ");
+
+        switch (opcion)
+        {
+        case 1:
+        {
+            int id = cargarEntero("Ingrese el ID del equipo: ");
+            int pos = _repo.buscarPorNumero(id);
+            if (pos != -1)
+            {
+                Equipo e = _repo.leer(pos);
+                if(!e.getEliminado()) return id;
+            }
+            cout << " > El ID ingresado no corresponde a un equipo activo." << endl;
+            system("pause");
+            break;
+        }
+        case 2:
+        {
+            int idEncontrado = buscarPorCuit();
+            if (idEncontrado > 0) return idEncontrado;
+            break;
+        }
+        case 3:
+        {
+            listado();
+            int id = cargarEntero("\nIngrese ID del equipo seleccionado (0 para cancelar): ");
+            if (id == 0) break;
+
+            int pos = _repo.buscarPorNumero(id);
+            if (pos != -1 && !_repo.leer(pos).getEliminado()) return id;
+
+            cout << " > ID invalido o equipo eliminado." << endl;
+            system("pause");
+            break;
+        }
+        case 0:
+            return 0;
+        default:
+            cout << " > Opcion incorrecta." << endl;
+            system("pause");
+            break;
+        }
+    }
+    while (opcion != 0);
+
+    return 0;
+}
+
+bool EquipoManager::equipoEnReparacionActiva(int nroEquipo)
+{
+    DetalleReparacionArchivo repoDetalle;
+    ReparacionArchivo repoRep;
+
+    int cantDetalles = repoDetalle.getCantidadRegistros();
+
+    for (int i = 0; i < cantDetalles; i++)
+    {
+        DetalleReparacion d = repoDetalle.leer(i);
+
+        if (d.getNroEquipo() == nroEquipo && !d.getEliminado())
+        {
+
+            int posReparacion = repoRep.buscarPorNumero(d.getNroReparacion());
+
+            if (posReparacion != -1)
+            {
+                Reparacion rep = repoRep.leer(posReparacion);
+
+                if (rep.getEstado() == 1 || rep.getEstado() == 2)
+                {
+                    return true; //equipo en taller
+                }
+            }
+        }
+    }
+    return false;
+}
+
+int EquipoManager::buscarPorCuit()
+{
+    string cuit;
+    int opcion = 1;
+
+    while (opcion == 1)
+    {
+        system("cls");
+        cout << "=== BUSCAR EQUIPOS POR CUIT ===" << endl;
+        cuit = cargarTexto("Ingrese el CUIT del cliente (o '0' para cancelar): ", 14);
+
+        if (cuit == "0") return 0;
+
+        int cantidad = _repo.getCantidadRegistros();
+        int coincidencias = 0;
+        int ultimoId = -1;
+
+        system("cls");
+        cout << "=== EQUIPOS ENCONTRADOS PARA EL CUIT: " << cuit << " ===" << endl;
+        cout << "----------------------------------------------------------------------" << endl;
+
+        //listado de coincidencias
+        for (int i = 0; i < cantidad; i++)
+        {
+            Equipo e = _repo.leer(i);
+            if (!e.getEliminado() && e.getCuit() == cuit)
+            {
+                cout << " ID: #" << e.getNroEquipo() << " | " << e.getTipoEquipoString()
+                     << " - " << e.getMarca() << endl;
+                coincidencias++;
+                ultimoId = e.getNroEquipo();
+            }
+        }
+        cout << "----------------------------------------------------------------------" << endl;
+
+        //no hay equipos asignados a ese cuit
+        if (coincidencias == 0)
+        {
+            cout << "\n > No se encontraron equipos activos para el CUIT: " << cuit << endl;
+            cout << "1. Intentar con otro CUIT" << endl;
+            cout << "0. Volver atras" << endl;
+            opcion = cargarEntero("\nSeleccione una opcion: ");
+            if (opcion == 0) return 0;
+            continue;
+        }
+
+        //un solo equipo asociado
+        if (coincidencias == 1)
+        {
+            cout << "\n> Se encontro un unico equipo. Seleccionando ID: #" << ultimoId << endl;
+            system("pause");
+            return ultimoId;
+        }
+
+        //varios equipos
+        int idSeleccionado = cargarEntero("\nIngrese el ID del equipo que desea seleccionar (0 para cancelar): ");
+        if (idSeleccionado == 0) return 0;
+
+        int posValidar = _repo.buscarPorNumero(idSeleccionado);
+        if (posValidar != -1)
+        {
+            Equipo eq = _repo.leer(posValidar);
+            if (eq.getCuit() == cuit && !eq.getEliminado())
+            {
+                return idSeleccionado;
+            }
+        }
+
+        cout << "\n > ERROR: El ID ingresado no corresponde a ninguna de las opciones listadas." << endl;
+        system("pause");
+    }
+
+    return 0;
+}
+

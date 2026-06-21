@@ -1175,8 +1175,8 @@ void ReparacionManager::listadoPorFechaEntrega()
 string ReparacionManager::asignarTecnico()
 {
     system("cls");
-    cout << "=== SELECCION DE TECNICO ===" << endl;
-    cout << "Legajo\tNombre\t\tTareas Activas" << endl;
+    cout << "=== SELECCION DE TECNICO ===" << endl<<endl;
+    cout << "Legajo\t\tNombre\t\tTareas Activas" << endl;
     cout << "------------------------------------------" << endl;
 
     EmpleadoManager mgrEmp;

@@ -18,6 +18,9 @@ private:
    void mostrar(const Equipo &e);
    bool nroEquipoUnico(int nro);
    bool clienteExiste(const std::string &cuit);
+   int seleccionarEquipo();
+   bool equipoEnReparacionActiva(int nroEquipo);
+   int buscarPorCuit();
 
    EquipoArchivo _repo;
    ClienteArchivo _repoCliente;
