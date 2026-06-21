@@ -12,6 +12,8 @@ public:
    void modificacion();
    void listado();
    void listadoPorApellido();
+   bool empleadoTieneTareasPendientes(const std::string &legajo);
+   int contarTareasPendientes(const std::string &legajo);
 
 private:
    Empleado cargarDatos();

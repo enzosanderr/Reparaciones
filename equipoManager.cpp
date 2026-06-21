@@ -2,6 +2,7 @@
 #include "equipoManager.h"
 #include "utils.h"
 #include "clienteManager.h"
+#include "reparacionManager.h"
 
 using namespace std;
 
@@ -154,20 +155,64 @@ void EquipoManager::alta()
 
 void EquipoManager::baja()
 {
-    cout << "\n=== BAJA DE EQUIPO ===" << endl;
-    int nro = cargarEntero("Ingrese numero de equipo a dar de baja: ");
+    system("cls");
+    cout << "=== BAJA DE EQUIPO ===" << endl;
 
-    int pos = _repo.buscarPorNumero(nro);
+    int nroEquipo = cargarEntero("Ingrese el numero de equipo a dar de baja (0 para cancelar): ");
+    if (nroEquipo == 0) return;
+
+    int pos = _repo.buscarPorNumero(nroEquipo);
     if (pos == -1)
     {
-        cout << "\nEquipo no encontrado o ya esta eliminado." << endl;
+        cout << " > ERROR: El equipo #" << nroEquipo << " no existe en el sistema." << endl;
+        system("pause");
         return;
     }
 
     Equipo e = _repo.leer(pos);
+
+    if (e.getEliminado())
+    {
+        cout << " > El equipo ya se encuentra dado de baja." << endl;
+        system("pause");
+        return;
+    }
+
+
+    ReparacionManager mgrReparacion;
+    if (mgrReparacion.equipoTieneReparacionAbierta(nroEquipo))
+    {
+        cout << " > ERROR: No se puede eliminar el equipo. Actualmente se encuentra en el taller" << endl;
+        cout << "   asociado a una orden de reparacion abierta o en proceso." << endl;
+        system("pause");
+        return;
+    }
+
+    //confirmacion
+    system("cls");
+    cout << "=== CONFIRMACION DE BAJA ===" << endl;
+
+    mostrar(e);
+    cout << "--------------------------------------------------" << endl;
+
+    int confirmar = cargarEntero("¨Confirma la baja logica de este equipo? (1=Si, 0=No): ");
+    if (confirmar != 1)
+    {
+        cout << " >> Operacion cancelada." << endl;
+        system("pause");
+        return;
+    }
+
     e.setEliminado(true);
-    if (_repo.actualizar(pos, e)) cout << "\nEquipo dado de baja exitosamente." << endl;
-    else cout << "\nError al dar de baja el equipo." << endl;
+    if (_repo.actualizar(pos, e))
+    {
+        cout << "\n>>> EXITO: Equipo #" << nroEquipo << " dado de baja correctamente." << endl;
+    }
+    else
+    {
+        cout << "\n > ERROR: No se pudo actualizar el registro en el disco." << endl;
+    }
+    system("pause");
 }
 
 void EquipoManager::modificacion()
@@ -256,4 +301,22 @@ void EquipoManager::listadoPorFechaIngreso()
     if (!hay) cout << "No hay equipos activos." << endl;
 
     delete[] v;
+}
+
+
+
+int EquipoManager::contarEquiposPorCuit(const string &cuit)
+{
+    int cant = _repo.getCantidadRegistros();
+    int contador = 0;
+
+    for (int i = 0; i < cant; i++)
+    {
+        Equipo eq = _repo.leer(i);
+        if (!eq.getEliminado() && eq.getCuit() == cuit)
+        {
+            contador++;
+        }
+    }
+    return contador;
 }

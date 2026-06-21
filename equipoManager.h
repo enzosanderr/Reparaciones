@@ -11,6 +11,7 @@ public:
    void modificacion();
    void listado();
    void listadoPorFechaIngreso();
+   int contarEquiposPorCuit(const std::string &cuit);
 
 private:
    bool cargarCamposEditables(Equipo &e);

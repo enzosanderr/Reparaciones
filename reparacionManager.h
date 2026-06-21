@@ -19,6 +19,7 @@ public:
 
     void mostrar(const Reparacion &r);
     float calcularTotal(int nroReparacion);
+    bool equipoTieneReparacionAbierta(int nroEquipo);
 
 private:
     int contarEquiposDeReparacion(int nroReparacion);
@@ -31,11 +32,11 @@ private:
     void modificarDetalles(const Reparacion &r);
     std::string getNombreEstado(int estado);
     void listarPorEstado();
-    int seleccionarReparacion();
+    int seleccionarReparacion(int filtroEstado = 0);
     int buscarPorId();
-    int buscarPorCuit();
+    int buscarPorCuit(int filtroEstado = 0);
     int seleccionarDeUltimasDiez();
-    bool equipoTieneReparacionAbierta(int nroEquipo);
+    std::string asignarTecnico();
 
     ReparacionArchivo _repo;
     DetalleReparacionArchivo _repoDetalle;
