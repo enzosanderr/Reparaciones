@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include "empleadoManager.h"
 #include "reparacionManager.h"
 #include "utils.h"
@@ -272,48 +273,6 @@ void EmpleadoManager::listado()
     if (!hay) cout << "No hay empleados activos." << endl;
 }
 
-void EmpleadoManager::listadoPorApellido()
-{
-    cout << "\n=== LISTADO DE EMPLEADOS (ORDENADO POR APELLIDO) ===" << endl;
-    int cantidad = _repo.getCantidadRegistros();
-    if (cantidad == 0)
-    {
-        cout << "No hay empleados registrados." << endl;
-        return;
-    }
-
-    Empleado *v = new Empleado[cantidad];
-    _repo.leerTodos(v, cantidad);
-
-    for (int i = 0; i < cantidad - 1; i++)
-    {
-        int min = i;
-        for (int j = i + 1; j < cantidad; j++)
-        {
-            if (v[j].getApellido() < v[min].getApellido()) min = j;
-        }
-        if (min != i)
-        {
-            Empleado tmp = v[i];
-            v[i] = v[min];
-            v[min] = tmp;
-        }
-    }
-
-    bool hay = false;
-    for (int i = 0; i < cantidad; i++)
-    {
-        if (!v[i].getEliminado())
-        {
-            mostrar(v[i]);
-            hay = true;
-        }
-    }
-    if (!hay) cout << "No hay empleados activos." << endl;
-
-    delete[] v;
-}
-
 
 bool EmpleadoManager::empleadoTieneTareasPendientes(const string &legajo)
 {
@@ -394,4 +353,182 @@ string EmpleadoManager::seleccionarEmpleado()
     while (opcion != 0);
 
     return "0";
+}
+
+void EmpleadoManager::menuConsultas()
+{
+    int opcion;
+    do
+    {
+        system("cls");
+        cout << "=== CONSULTAS Y LISTADOS: EMPLEADOS ===" << endl << endl;
+        cout << "1. Listado ordenado por Apellido" << endl;
+        cout << "2. Consulta individual por Legajo" << endl;
+        cout << "3. Ver informe de carga de trabajo (Tareas pendientes)" << endl;
+        cout << "4. Ver historial de empleados inactivos (Bajas)" << endl;
+        cout << "0. Volver al menu anterior" << endl;
+
+        opcion = cargarEntero("\nSeleccione una opcion: ");
+
+        switch (opcion)
+        {
+        case 1:
+            system("cls");
+            listadoPorApellido();
+            system("pause");
+            break;
+        case 2:
+            system("cls");
+            consultaPorLegajo();
+            system("pause");
+            break;
+        case 3:
+            system("cls");
+            informeCargaTrabajo();
+            system("pause");
+            break;
+        case 4:
+            system("cls");
+            listadoInactivos();
+            system("pause");
+            break;
+        case 0:
+            break;
+        default:
+            cout << " > Opcion incorrecta." << endl;
+            system("pause");
+        }
+    } while (opcion != 0);
+}
+
+void EmpleadoManager::listadoPorApellido()
+{
+    cout << "\n=== LISTADO DE EMPLEADOS (ORDENADO POR APELLIDO) ===" << endl<<endl;
+    int cantidad = _repo.getCantidadRegistros();
+    if (cantidad == 0)
+    {
+        cout << "No hay empleados registrados." << endl;
+        return;
+    }
+
+    Empleado *v = new Empleado[cantidad];
+    if (v == nullptr)
+    {
+        cout << " > ERROR CRITICO: No se pudo obtener memoria para ordenar el listado." << endl;
+        return;
+    }
+    _repo.leerTodos(v, cantidad);
+
+    for (int i = 0; i < cantidad - 1; i++)
+    {
+        int min = i;
+        for (int j = i + 1; j < cantidad; j++)
+        {
+            if (v[j].getApellido() < v[min].getApellido()) min = j;
+        }
+        if (min != i)
+        {
+            Empleado tmp = v[i];
+            v[i] = v[min];
+            v[min] = tmp;
+        }
+    }
+
+    bool hay = false;
+    for (int i = 0; i < cantidad; i++)
+    {
+        if (!v[i].getEliminado())
+        {
+            //mostrar(v[i]);
+            cout << "Empleado: " << v[i].getApellido() << " " << v[i].getNombre() << endl;
+            cout << "Legajo: " << v[i].getLegajo() << endl;
+            cout << "-----------------------------------" << endl;
+            hay = true;
+        }
+    }
+    if (!hay) cout << "No hay empleados activos." << endl;
+
+    delete[] v;
+}
+
+void EmpleadoManager::consultaPorLegajo()
+{
+    cout << "=== CONSULTA DE EMPLEADO POR LEGAJO ===" << endl << endl;
+    string legajo = cargarTexto("Ingrese el Legajo a consultar: ", 9);
+
+    int pos = _repo.buscarPorLegajo(legajo);
+    if (pos == -1)
+    {
+        cout << "\n > El Legajo ingresado no corresponde a ningun empleado." << endl;
+        return;
+    }
+
+    Empleado e = _repo.leer(pos);
+    cout << "\n--- DATOS DEL REGISTRO ---" << endl;
+    mostrar(e);
+    if (e.getEliminado())
+    {
+        cout << "ESTADO: [INACTIVO / DADO DE BAJA]" << endl;
+    }
+    else
+    {
+        cout << "ESTADO: [ACTIVO]" << endl;
+    }
+}
+
+void EmpleadoManager::informeCargaTrabajo()
+{
+    cout << "=== INFORME OPERATIVO: CARGA DE TRABAJO DE TECNICOS ===" << endl << endl;
+    int cantidad = _repo.getCantidadRegistros();
+    if (cantidad == 0)
+    {
+        cout << "No hay empleados registrados." << endl;
+        return;
+    }
+
+    cout << left << setw(12) << "LEGAJO"
+         << left << setw(30) << "NOMBRE COMPLETO"
+         << right << setw(18) << "TAREAS PENDIENTES" << endl;
+    cout << "----------------------------------------------------------------------" << endl;
+
+    bool hayTecnicos = false;
+    for (int i = 0; i < cantidad; i++)
+    {
+        Empleado e = _repo.leer(i);
+        if (!e.getEliminado())
+        {
+            string nombreCompleto = e.getNombre() + " " + e.getApellido();
+            int tareas = contarTareasPendientes(e.getLegajo());
+
+            cout << left << setw(12) << e.getLegajo()
+                 << left << setw(30) << nombreCompleto
+                 << right << setw(15) << tareas << " orden(es)" << endl;
+            hayTecnicos = true;
+        }
+    }
+    cout << "----------------------------------------------------------------------" << endl;
+    if (!hayTecnicos) cout << "No hay tecnicos activos registrados." << endl;
+}
+
+void EmpleadoManager::listadoInactivos()
+{
+    cout << "=== HISTORIAL DE EMPLEADOS DADOS DE BAJA ===" << endl << endl;
+    int cantidad = _repo.getCantidadRegistros();
+    if (cantidad == 0)
+    {
+        cout << "No hay registros en el archivo." << endl;
+        return;
+    }
+
+    bool hayInactivos = false;
+    for (int i = 0; i < cantidad; i++)
+    {
+        Empleado e = _repo.leer(i);
+        if (e.getEliminado())
+        {
+            mostrar(e);
+            hayInactivos = true;
+        }
+    }
+    if (!hayInactivos) cout << "No se encontraron empleados inactivos en el sistema." << endl;
 }

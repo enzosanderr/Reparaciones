@@ -15,6 +15,7 @@ public:
    void reparacionesPorTipoEquipo();
    void productividadEmpleados();
    void equiposReincidentes();
+   bool pedirRangoFechas(Fecha &desde, Fecha &hasta);
 
 private:
    ReparacionManager _mgrReparacion;

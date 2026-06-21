@@ -70,7 +70,7 @@ Cliente ClienteManager::cargarDatos(bool &cancelado)
             if (clienteExistente.getEliminado())
             {
                 cout << "\n > AVISO: Este CUIT pertenece a un cliente dado de baja." << endl;
-                int reactivar = cargarEntero("¨Desea RESTAURAR y reactivar a este cliente ahora? (1=Si, 0=No): ");
+                int reactivar = cargarEntero("Â¿Desea RESTAURAR y reactivar a este cliente ahora? (1=Si, 0=No): ");
 
                 if (reactivar == 1)
                 {
@@ -104,7 +104,6 @@ Cliente ClienteManager::cargarDatos(bool &cancelado)
     cargarCamposEditables(c);
     return c;
 }
-
 
 void ClienteManager::mostrar(const Cliente &c)
 {
@@ -239,7 +238,7 @@ void ClienteManager::baja()
     cout << "-----------------------------------------------------------------------------" << endl;
 
 
-    int confirmar = cargarEntero("¨Confirma la baja de este cliente? (1=Si, 0=No): ");
+    int confirmar = cargarEntero("Â¿Confirma la baja de este cliente? (1=Si, 0=No): ");
     if (confirmar != 1)
     {
         cout << " >> Operacion cancelada." << endl;
@@ -384,6 +383,11 @@ void ClienteManager::listadoPorApellido()
     }
 
     Cliente *v = new Cliente[cantidad];
+    if (v == nullptr)
+    {
+        cout << " > ERROR CRITICO: No se pudo obtener memoria para ordenar el listado." << endl;
+        return;
+    }
     _repo.leerTodos(v, cantidad);
 
     for (int i = 0; i < cantidad - 1; i++)
@@ -458,3 +462,92 @@ string ClienteManager::seleccionarCliente()
     return "0";
 }
 
+
+void ClienteManager::menuConsultas()
+{
+    int opcion;
+    do
+    {
+        system("cls");
+        cout << "=== CONSULTAS Y LISTADOS: CLIENTES ===" << endl << endl;
+        cout << "1. Listado ordenado por Apellido" << endl;
+        cout << "2. Consulta individual por CUIT" << endl;
+        cout << "3. Ver historial de clientes inactivos (Bajas)" << endl;
+        cout << "0. Volver al menu anterior" << endl;
+
+        opcion = cargarEntero("\nSeleccione una opcion: ");
+
+        switch (opcion)
+        {
+        case 1:
+            system("cls");
+            listadoPorApellido();
+            system("pause");
+            break;
+        case 2:
+            system("cls");
+            consultaPorCuit();
+            system("pause");
+            break;
+        case 3:
+            system("cls");
+            listadoInactivos();
+            system("pause");
+            break;
+        case 0:
+            break;
+        default:
+            cout << " > Opcion incorrecta." << endl;
+            system("pause");
+        }
+    } while (opcion != 0);
+}
+
+
+void ClienteManager::consultaPorCuit()
+{
+    cout << "=== CONSULTA DE CLIENTE POR CUIT ===" << endl << endl;
+    string cuit = cargarTexto("Ingrese el CUIT a consultar: ", 14);
+
+    int pos = _repo.buscarPorCuit(cuit);
+    if (pos == -1)
+    {
+        cout << "\n > El CUIT ingresado no corresponde a ningun cliente." << endl;
+        return;
+    }
+
+    Cliente c = _repo.leer(pos);
+    cout << "\n--- DATOS DEL REGISTRO ---" << endl;
+    mostrar(c);
+    if (c.getEliminado())
+    {
+        cout << "ESTADO: [INACTIVO / DADO DE BAJA]" << endl;
+    }
+    else
+    {
+        cout << "ESTADO: [ACTIVO]" << endl;
+    }
+}
+
+void ClienteManager::listadoInactivos()
+{
+    cout << "=== HISTORIAL DE CLIENTES DADOS DE BAJA ===" << endl << endl;
+    int cantidad = _repo.getCantidadRegistros();
+    if (cantidad == 0)
+    {
+        cout << "No hay registros en el archivo." << endl;
+        return;
+    }
+
+    bool hayInactivos = false;
+    for (int i = 0; i < cantidad; i++)
+    {
+        Cliente c = _repo.leer(i);
+        if (c.getEliminado())
+        {
+            mostrar(c);
+            hayInactivos = true;
+        }
+    }
+    if (!hayInactivos) cout << "No se encontraron clientes inactivos en el sistema." << endl;
+}

@@ -19,7 +19,6 @@ private:
    EquipoMenu _menuEquipo;
    EmpleadoMenu _menuEmpleado;
    ReparacionMenu _menuReparacion;
-   ConsultaMenu _menuConsulta;
    InformeMenu _menuInforme;
    ConfiguracionMenu _menuConfiguracion;
 };

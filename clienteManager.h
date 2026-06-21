@@ -9,10 +9,13 @@ public:
     void alta();
     void baja();
     void modificacion();
-    void listado();
-    void listadoPorApellido();
+    void menuConsultas();
 
 private:
+    void listado();
+    void listadoPorApellido();
+    void listadoInactivos();
+    void consultaPorCuit();
     Cliente cargarDatos(bool &cancelado);
     void cargarCamposEditables(Cliente &c);
     void mostrar(const Cliente &c);

@@ -9,11 +9,16 @@ public:
    void alta();
    void baja();
    void modificacion();
-   void listado();
-   void listadoPorFechaIngreso();
+   void menuConsultas();
    int contarEquiposPorCuit(const std::string &cuit);
 
 private:
+   void listado();
+   void listadoPorFechaIngreso();
+   void listadoInactivos();
+   void consultaPorCliente();
+   void listadoPorTipo();
+
    bool cargarCamposEditables(Equipo &e);
    void mostrar(const Equipo &e);
    bool nroEquipoUnico(int nro);

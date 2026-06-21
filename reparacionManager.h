@@ -14,14 +14,19 @@ public:
     void alta();
     void baja();
     void modificacion();
-    void listado();
-    void listadoPorFechaEntrega();
+    void menuConsultas();
 
     void mostrar(const Reparacion &r);
     float calcularTotal(int nroReparacion);
     bool equipoTieneReparacionAbierta(int nroEquipo);
 
 private:
+    void listado();
+    void listadoPorFechaEntrega();
+    void consultaPorCliente();
+    void consultaPorRangoFechas();
+    void listadoInactivos();
+
     int contarEquiposDeReparacion(int nroReparacion);
     void mostrarEquiposDeCliente(const std::string &cuit);
     int cargarDetalles(int nroReparacion, const std::string &cuit);

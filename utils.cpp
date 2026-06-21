@@ -72,14 +72,36 @@ float cargarFloat(const string &prompt) {
    }
 }
 
-Fecha cargarFecha(const string &etiqueta) {
+Fecha cargarFecha(const string &etiqueta, bool permiteCancelar) {
    Fecha f;
+   int d, m, a;
 
    cout << etiqueta << endl;
    do {
-      f.setDia(cargarEntero("  Dia: "));
-      f.setMes(cargarEntero("  Mes: "));
-      f.setAnio(cargarEntero("  Anio: "));
+      if (permiteCancelar) {
+          d = cargarEntero("  Dia (0 para cancelar): ");
+          if (d == 0) return Fecha(0, 0, 0);
+      } else {
+          d = cargarEntero("  Dia: ");
+      }
+
+      if (permiteCancelar) {
+          m = cargarEntero("  Mes (0 para cancelar): ");
+          if (m == 0) return Fecha(0, 0, 0);
+      } else {
+          m = cargarEntero("  Mes: ");
+      }
+
+      if (permiteCancelar) {
+          a = cargarEntero("  Anio (0 para cancelar): ");
+          if (a == 0) return Fecha(0, 0, 0);
+      } else {
+          a = cargarEntero("  Anio: ");
+      }
+
+      f.setDia(d);
+      f.setMes(m);
+      f.setAnio(a);
 
       if (!f.esValida()) {
          cout << " > Fecha invalida (revise el dia segun el mes). Reintente." << endl;

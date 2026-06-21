@@ -360,6 +360,11 @@ void EquipoManager::listadoPorFechaIngreso()
     }
 
     Equipo *v = new Equipo[cantidad];
+    if (v == nullptr)
+    {
+        cout << " > ERROR CRITICO: No se pudo obtener memoria para ordenar el listado." << endl;
+        return;
+    }
     _repo.leerTodos(v, cantidad);
 
     for (int i = 0; i < cantidad - 1; i++)
@@ -571,5 +576,127 @@ int EquipoManager::buscarPorCuit()
     }
 
     return 0;
+}
+
+void EquipoManager::menuConsultas()
+{
+    int opcion;
+    do
+    {
+        system("cls");
+        cout << "=== CONSULTAS Y LISTADOS: EQUIPOS ===" << endl << endl;
+        cout << "1. Listado ordenado por Fecha de Ingreso" << endl;
+        cout << "2. Consulta de equipos por Cliente (CUIT)" << endl;
+        cout << "3. Filtrar equipos por Tipo de Dispositivo" << endl;
+        cout << "4. Ver historial de equipos dados de baja" << endl;
+        cout << "0. Volver al menu anterior" << endl;
+
+        opcion = cargarEntero("\nSeleccione una opcion: ");
+
+        switch (opcion)
+        {
+        case 1:
+            system("cls");
+            listadoPorFechaIngreso();
+            system("pause");
+            break;
+        case 2:
+            system("cls");
+            consultaPorCliente();
+            system("pause");
+            break;
+        case 3:
+            system("cls");
+            listadoPorTipo();
+            system("pause");
+            break;
+        case 4:
+            system("cls");
+            listadoInactivos();
+            system("pause");
+            break;
+        case 0:
+            break;
+        default:
+            cout << " > Opcion incorrecta." << endl;
+            system("pause");
+        }
+    } while (opcion != 0);
+}
+
+void EquipoManager::consultaPorCliente()
+{
+    cout << "=== CONSULTA DE EQUIPOS POR CLIENTE ===" << endl << endl;
+    int id = buscarPorCuit();
+    if (id > 0)
+    {
+        int pos = _repo.buscarPorNumero(id);
+        if (pos != -1)
+        {
+            system("cls");
+            cout << "=== DETALLE DEL EQUIPO SELECCIONADO ===" << endl << endl;
+            mostrar(_repo.leer(pos));
+        }
+    }
+}
+
+
+void EquipoManager::listadoPorTipo()
+{
+    cout << "=== FILTRAR EQUIPOS POR TIPO ===" << endl << endl;
+    cout << "1. PC escritorio\n2. Notebook\n3. Impresora\n4. Periferico\n5. Celular" << endl;
+    int tipoBuscado = cargarEntero("\nSeleccione el tipo a listar: ");
+
+    if (tipoBuscado < 1 || tipoBuscado > 5)
+    {
+        cout << " > Tipo invalido." << endl;
+        return;
+    }
+
+    int cantidad = _repo.getCantidadRegistros();
+    if (cantidad == 0)
+    {
+        cout << "No hay equipos registrados." << endl;
+        return;
+    }
+
+    system("cls");
+    cout << "=== LISTADO DE EQUIPOS ACTIVOS: " << tipoBuscado << " ===" << endl << endl;
+
+    bool hayEquipos = false;
+    for (int i = 0; i < cantidad; i++)
+    {
+        Equipo e = _repo.leer(i);
+        if (!e.getEliminado() && e.getTipoEquipo() == tipoBuscado)
+        {
+            mostrar(e);
+            hayEquipos = true;
+        }
+    }
+    if (!hayEquipos) cout << "No se encontraron equipos activos cargados para esa categoria." << endl;
+}
+
+
+void EquipoManager::listadoInactivos()
+{
+    cout << "=== HISTORIAL DE EQUIPOS DADOS DE BAJA ===" << endl << endl;
+    int cantidad = _repo.getCantidadRegistros();
+    if (cantidad == 0)
+    {
+        cout << "No hay registros en el archivo." << endl;
+        return;
+    }
+
+    bool hayInactivos = false;
+    for (int i = 0; i < cantidad; i++)
+    {
+        Equipo e = _repo.leer(i);
+        if (e.getEliminado())
+        {
+            mostrar(e);
+            hayInactivos = true;
+        }
+    }
+    if (!hayInactivos) cout << "No se encontraron equipos inactivos en el sistema." << endl;
 }
 

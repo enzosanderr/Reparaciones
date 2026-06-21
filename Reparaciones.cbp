@@ -47,8 +47,6 @@
 		<Unit filename="configuracionMenu.h" />
 		<Unit filename="consultaManager.cpp" />
 		<Unit filename="consultaManager.h" />
-		<Unit filename="consultaMenu.cpp" />
-		<Unit filename="consultaMenu.h" />
 		<Unit filename="detalleReparacion.cpp" />
 		<Unit filename="detalleReparacion.h" />
 		<Unit filename="detalleReparacionArchivo.cpp" />

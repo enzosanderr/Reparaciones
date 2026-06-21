@@ -7,12 +7,12 @@ InformeMenu::InformeMenu() {
 }
 
 void InformeMenu::mostrarOpciones() {
-   cout << "=== MENU INFORMES ===" << endl;
-   cout << "1. Recaudacion mensual (por periodo)" << endl;
-   cout << "2. Recaudacion por cliente" << endl;
-   cout << "3. Reparaciones por tipo de equipo" << endl;
-   cout << "4. Productividad por empleado" << endl;
-   cout << "5. Equipos reincidentes" << endl;
+   cout << "=== MENU INFORMES (POR RANGO DE FECHAS) ===" << endl;
+   cout << "1. Recaudacion total del taller" << endl;
+   cout << "2. Recaudacion detallada por cliente" << endl;
+   cout << "3. Estadistica de reparaciones por tipo de equipo" << endl;
+   cout << "4. Productividad y facturacion por empleado" << endl;
+   cout << "5. Alerta de equipos reincidentes" << endl;
    cout << "0. Volver al menu principal" << endl;
 }
 

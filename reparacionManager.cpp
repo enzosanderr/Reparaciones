@@ -853,7 +853,7 @@ string ReparacionManager::getNombreEstado(int estado)
 void ReparacionManager::listarPorEstado()
 {
     system("cls");
-    cout << "=== LISTAR REPARACIONES POR ESTADO ===" << endl;
+    cout << "=== LISTAR REPARACIONES POR ESTADO ===" << endl<<endl;
     cout << "1. Ver reparaciones: SIN INICIAR" << endl;
     cout << "2. Ver reparaciones: EN PROCESO" << endl;
     cout << "3. Ver reparaciones: TERMINADAS" << endl;
@@ -1151,6 +1151,11 @@ void ReparacionManager::listadoPorFechaEntrega()
     }
 
     Reparacion *v = new Reparacion[cantidad];
+    if (v == nullptr)
+    {
+        cout << " > ERROR CRITICO: No se pudo obtener memoria para ordenar el listado." << endl;
+        return;
+    }
     _repo.leerTodos(v, cantidad);
 
     for (int i = 0; i < cantidad - 1; i++)
@@ -1232,3 +1237,142 @@ string ReparacionManager::asignarTecnico()
     return legajo;
 }
 
+
+void ReparacionManager::menuConsultas()
+{
+    int opcion;
+    do
+    {
+        system("cls");
+        cout << "=== CONSULTAS Y LISTADOS: REPARACIONES ===" << endl << endl;
+        cout << "1. Listado general ordenado por Fecha de Entrega" << endl;
+        cout << "2. Consulta de reparaciones por Cliente (CUIT)" << endl;
+        cout << "3. Filtrar reparaciones por Estado (En proceso, Terminadas, etc.)" << endl;
+        cout << "4. Buscar reparaciones por Rango de Fechas" << endl;
+        cout << "5. Ver historial de reparaciones anuladas (Bajas)" << endl;
+        cout << "0. Volver al menu anterior" << endl;
+
+        opcion = cargarEntero("\nSeleccione una opcion: ");
+
+        switch (opcion)
+        {
+        case 1:
+            system("cls");
+            listadoPorFechaEntrega();
+            system("pause");
+            break;
+        case 2:
+            system("cls");
+            consultaPorCliente();
+            system("pause");
+            break;
+        case 3:
+            listarPorEstado();
+            break;
+        case 4:
+            system("cls");
+            consultaPorRangoFechas();
+            system("pause");
+            break;
+        case 5:
+            system("cls");
+            listadoInactivos();
+            system("pause");
+            break;
+        case 0:
+            break;
+        default:
+            cout << " > Opcion incorrecta." << endl;
+            system("pause");
+        }
+    } while (opcion != 0);
+}
+
+void ReparacionManager::consultaPorCliente()
+{
+    cout << "=== CONSULTA DE REPARACIONES POR CLIENTE ===" << endl << endl;
+
+    int id = buscarPorCuit();
+
+    if (id > 0)
+    {
+        int pos = _repo.buscarPorNumero(id);
+        if (pos != -1)
+        {
+            system("cls");
+            cout << "=== DETALLE DE LA ORDEN DE REPARACION ===" << endl << endl;
+            mostrar(_repo.leer(pos));
+        }
+    }
+}
+
+void ReparacionManager::consultaPorRangoFechas()
+{
+    cout << "=== CONSULTA POR RANGO DE FECHAS (INGRESO) ===" << endl << endl;
+    cout << "Ingrese la fecha de INICIO del periodo:" << endl;
+    Fecha fechaInicio = cargarFecha("");
+
+    if (!fechaInicio.esValida())
+    {
+        cout << " > Fecha invalida." << endl;
+        return;
+    }
+
+    cout << "\nIngrese la fecha de FIN del periodo:" << endl;
+    Fecha fechaFin = cargarFecha("");
+
+    if (!fechaFin.esValida() || fechaFin.aNumero() < fechaInicio.aNumero())
+    {
+        cout << " > Fecha invalida o anterior a la fecha de inicio." << endl;
+        return;
+    }
+
+    int cantidad = _repo.getCantidadRegistros();
+    if (cantidad == 0) return;
+
+    system("cls");
+    cout << "=== REPARACIONES INGRESADAS ENTRE " << fechaInicio.toString() << " Y " << fechaFin.toString() << " ===" << endl << endl;
+
+    bool hayRegistros = false;
+    for (int i = 0; i < cantidad; i++)
+    {
+        Reparacion r = _repo.leer(i);
+        if (!r.getEliminado())
+        {
+            if (r.getFechaIngreso().aNumero() >= fechaInicio.aNumero() &&
+                r.getFechaIngreso().aNumero() <= fechaFin.aNumero())
+            {
+                mostrar(r);
+                hayRegistros = true;
+            }
+        }
+    }
+
+    if (!hayRegistros)
+    {
+        cout << "No se registraron ingresos de equipos en ese periodo de tiempo." << endl;
+    }
+}
+
+void ReparacionManager::listadoInactivos()
+{
+    cout << "=== HISTORIAL DE REPARACIONES ANULADAS ===" << endl << endl;
+    int cantidad = _repo.getCantidadRegistros();
+    if (cantidad == 0)
+    {
+        cout << "No hay registros en el archivo." << endl;
+        return;
+    }
+
+    bool hayInactivos = false;
+    for (int i = 0; i < cantidad; i++)
+    {
+        Reparacion r = _repo.leer(i);
+        if (r.getEliminado())
+        {
+            mostrar(r);
+            hayInactivos = true;
+        }
+    }
+    if (!hayInactivos) cout << "No hay registro de reparaciones anuladas." << endl;
+}
