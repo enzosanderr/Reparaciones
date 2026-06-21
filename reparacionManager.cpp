@@ -43,6 +43,7 @@ int ReparacionManager::contarEquiposDeReparacion(int nroReparacion)
 void ReparacionManager::mostrarEquiposDeCliente(const string &cuit)
 {
     int cant = _repoEquipo.getCantidadRegistros();
+    int equiposDisponibles = 0;
     bool hay = false;
 
     cout << "\nEquipos del cliente " << cuit << ":" << endl;
@@ -51,13 +52,25 @@ void ReparacionManager::mostrarEquiposDeCliente(const string &cuit)
         Equipo e = _repoEquipo.leer(i);
         if (!e.getEliminado() && e.getCuit() == cuit)
         {
-            cout << "  #" << e.getNroEquipo() << " - " << e.getTipoEquipoString()
-                 << " - " << e.getMarca() << " - " << e.getDescripcion() << endl;
             hay = true;
+            bool enReparacion = equipoTieneReparacionAbierta(e.getNroEquipo());
+
+            cout << "  #" << e.getNroEquipo() << " - " << e.getTipoEquipoString()
+                 << " - " << e.getMarca() << " - " << e.getDescripcion() << (enReparacion ? " [EN REPARACION]" : " [DISPONIBLE]") << endl;
+
+            if (!enReparacion) {
+                equiposDisponibles++;
+            }
         }
+
     }
-    if (!hay) cout << "  (sin equipos cargados)" << endl;
+    if (!hay){ cout << "  (sin equipos cargados)" << endl;
+    }else if (equiposDisponibles == 0) {
+        cout << "\nATENCION: Todos los equipos de este cliente se encuentran actualmente en reparacion." << endl;
+    }
+
 }
+
 
 float ReparacionManager::pedirImporte()
 {
@@ -161,12 +174,21 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
         mostrarEquiposDeCliente(cuit);
         int nroEquipo = cargarEntero("\nNumero de equipo a reparar (0 para finalizar): ");
 
+
         if (nroEquipo == 0)
         {
             if (cargados == 0)
             {
-                cout << " > ERROR: Debe asociar al menos un equipo para confirmar la orden de reparacion." << endl;
-                continue;
+
+                int confirmar = cargarEntero("No ha cargado equipos. ¨Desea CANCELAR la carga? (1=Si, 0=No): ");
+                if (confirmar == 1)
+                {
+                    return -1;
+                }
+                else
+                {
+                    continue;
+                }
             }
             break;
         }
@@ -185,6 +207,8 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
             }
             continue;
         }
+
+
 
         Equipo eq = _repoEquipo.leer(posEquipo);
 
@@ -324,7 +348,14 @@ void ReparacionManager::alta()
     int nro = _repo.getNuevoId();
     cout << "\nNumero de orden de reparacion asignado: " << nro << endl;
 
+    //carga de detalles
     int cargados = cargarDetalles(nro, cuit);
+
+    if (cargados == -1) // Usuario decidi¢ cancelar
+    {
+        cout << "\n>>> Alta cancelada por el usuario. No se guardo ninguna reparacion." << endl;
+        return; // Salimos de la funci¢n alta() sin guardar nada
+    }
 
     //fechs
 
@@ -619,7 +650,7 @@ void ReparacionManager::modificacion()
             system("pause");
             break;
         }
-{
+        {
             Fecha nuevaFecha;
             bool fechaValida = false;
 
@@ -757,9 +788,11 @@ void ReparacionManager::listarPorEstado()
     system("pause");
 }
 
-int ReparacionManager::seleccionarReparacion() {
+int ReparacionManager::seleccionarReparacion()
+{
     int opcion;
-    do {
+    do
+    {
         system("cls");
         cout << "=== SELECCIONAR ORDEN DE REPARACION ===" << endl;
         cout << "1. Buscar ingresando el ID directamente" << endl;
@@ -767,29 +800,33 @@ int ReparacionManager::seleccionarReparacion() {
         cout << "0. Cancelar operacion" << endl;
         opcion = cargarEntero("\nSeleccione una opcion de busqueda: ");
 
-        switch (opcion) {
-            case 1: {
-                int id = cargarEntero("Ingrese el ID de la reparacion: ");
+        switch (opcion)
+        {
+        case 1:
+        {
+            int id = cargarEntero("Ingrese el ID de la reparacion: ");
 
-                if (_repo.buscarPorNumero(id) != -1) return id;
+            if (_repo.buscarPorNumero(id) != -1) return id;
 
-                cout << " > El ID ingresado no corresponde a una reparacion activa." << endl;
-                system("pause");
-                break;
-            }
-            case 2: {
-                int idEncontrado = buscarPorCuit();
-                if (idEncontrado > 0) return idEncontrado;
-                break;
-            }
-            case 0:
-                return 0;
-            default:
-                cout << " > Opcion incorrecta." << endl;
-                system("pause");
-                break;
+            cout << " > El ID ingresado no corresponde a una reparacion activa." << endl;
+            system("pause");
+            break;
         }
-    } while (opcion != 0);
+        case 2:
+        {
+            int idEncontrado = buscarPorCuit();
+            if (idEncontrado > 0) return idEncontrado;
+            break;
+        }
+        case 0:
+            return 0;
+        default:
+            cout << " > Opcion incorrecta." << endl;
+            system("pause");
+            break;
+        }
+    }
+    while (opcion != 0);
 
     return 0;
 }
@@ -816,11 +853,13 @@ int ReparacionManager::buscarPorId()
     return nro;
 }
 
-int ReparacionManager::buscarPorCuit() {
+int ReparacionManager::buscarPorCuit()
+{
     string cuit;
     int opcion = 1;
 
-    while (opcion == 1) {
+    while (opcion == 1)
+    {
         system("cls");
         cout << "=== BUSCAR REPARACION POR CUIT ===" << endl;
         cuit = cargarTexto("Ingrese el CUIT del cliente (o '0' para cancelar): ", 14);
@@ -831,16 +870,19 @@ int ReparacionManager::buscarPorCuit() {
         int coincidencias = 0;
         int ultimoIdEncontrado = -1;
 
-        for (int i = 0; i < cantidad; i++) {
+        for (int i = 0; i < cantidad; i++)
+        {
             Reparacion r = _repo.leer(i);
-            if (!r.getEliminado() && r.getCuit() == cuit) {
+            if (!r.getEliminado() && r.getCuit() == cuit)
+            {
                 coincidencias++;
                 ultimoIdEncontrado = r.getNroReparacion();
             }
         }
 
 
-        if (coincidencias == 0) {
+        if (coincidencias == 0)
+        {
             cout << "\n > No se encontraron reparaciones activas para el CUIT: " << cuit << endl;
             cout << "1. Intentar con otro CUIT" << endl;
             cout << "0. Volver atras" << endl;
@@ -854,9 +896,11 @@ int ReparacionManager::buscarPorCuit() {
         cout << "=== REPARACIONES ENCONTRADAS PARA EL CUIT: " << cuit << " ===" << endl;
         cout << "----------------------------------------------------------------------" << endl;
 
-        for (int i = 0; i < cantidad; i++) {
+        for (int i = 0; i < cantidad; i++)
+        {
             Reparacion r = _repo.leer(i);
-            if (!r.getEliminado() && r.getCuit() == cuit) {
+            if (!r.getEliminado() && r.getCuit() == cuit)
+            {
 
                 cout << " ID Orden: #" << r.getNroReparacion()
                      << " | Ingreso: " << r.getFechaIngreso().toString()
@@ -869,9 +913,11 @@ int ReparacionManager::buscarPorCuit() {
         if (idSeleccionado == 0) return 0;
 
         int posValidar = _repo.buscarPorNumero(idSeleccionado);
-        if (posValidar != -1) {
+        if (posValidar != -1)
+        {
             Reparacion rValidar = _repo.leer(posValidar);
-            if (rValidar.getCuit() == cuit && !rValidar.getEliminado()) {
+            if (rValidar.getCuit() == cuit && !rValidar.getEliminado())
+            {
                 return idSeleccionado;
             }
         }
