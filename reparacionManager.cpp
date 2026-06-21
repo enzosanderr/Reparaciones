@@ -183,6 +183,7 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
                 int confirmar = cargarEntero("No ha cargado equipos. ¨Desea CANCELAR la carga? (1=Si, 0=No): ");
                 if (confirmar == 1)
                 {
+                    limpiarDetallesHuerfanos(nroReparacion);
                     return -1;
                 }
                 else
@@ -193,11 +194,14 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
             break;
         }
 
+        //validaciones
         int posEquipo = _repoEquipo.buscarPorNumero(nroEquipo);
-
 
         if (posEquipo == -1)
         {
+
+
+
             cout << "\n > El equipo #" << nroEquipo << " no esta registrado en el sistema." << endl;
             int opcion = cargarEntero("\nDesea dar de alta un NUEVO equipo para este cliente ahora mismo? (1=Si, 0=No): ");
             if (opcion == 1)
@@ -351,10 +355,10 @@ void ReparacionManager::alta()
     //carga de detalles
     int cargados = cargarDetalles(nro, cuit);
 
-    if (cargados == -1) // Usuario decidi¢ cancelar
+    if (cargados == -1) //usuario cancelo
     {
         cout << "\n>>> Alta cancelada por el usuario. No se guardo ninguna reparacion." << endl;
-        return; // Salimos de la funci¢n alta() sin guardar nada
+        return;
     }
 
     //fechs
@@ -368,7 +372,15 @@ void ReparacionManager::alta()
         bool fechaValida = false;
         do
         {
-            fe = cargarFecha("Fecha estimada de entrega:");
+            fe = cargarFecha("Ingrese la fecha estimada de entrega (Ingrese a¤o 0 para cancelar la operacion):");
+
+            if (fe.getAnio() == 0)
+            {
+                 //cancelo al final
+                 limpiarDetallesHuerfanos(nro);
+                 cout << "\n>>> Alta cancelada por el usuario." << endl;
+                 return;
+            }
 
             if (!fe.esValida())
             {
@@ -388,8 +400,9 @@ void ReparacionManager::alta()
         while (!fechaValida);
 
 
+        //carga
         Reparacion r(nro, cuit, legajo,fechaActual, fe);
-        //r.setFechaIngreso(fechaActual);
+
         if (_repo.crear(r))
         {
             cout << "\n>>> EXITO: La Reparacion #" << nro << " se ha guardado en disco con "
@@ -397,6 +410,7 @@ void ReparacionManager::alta()
         }
         else
         {
+            limpiarDetallesHuerfanos(nro);
             cout << "\n>>> ERROR CRITICO: No se pudo escribir en el archivo reparaciones" << endl;
         }
     }
@@ -1066,4 +1080,20 @@ void ReparacionManager::listadoPorFechaEntrega()
     if (!hay) cout << "No hay reparaciones activas." << endl;
 
     delete[] v;
+}
+
+
+void ReparacionManager::limpiarDetallesHuerfanos(int nroReparacion)
+{
+    int cantD = _repoDetalle.getCantidadRegistros();
+    for (int i = 0; i < cantD; i++)
+    {
+        DetalleReparacion d = _repoDetalle.leer(i);
+
+        if (d.getNroReparacion() == nroReparacion && !d.getEliminado())
+        {
+            d.setEliminado(true);
+            _repoDetalle.actualizar(i, d);
+        }
+    }
 }

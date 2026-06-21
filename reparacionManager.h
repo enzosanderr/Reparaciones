@@ -36,6 +36,7 @@ private:
     int buscarPorCuit();
     int seleccionarDeUltimasDiez();
     bool equipoTieneReparacionAbierta(int nroEquipo);
+    void limpiarDetallesHuerfanos(int nroReparacion);
 
     ReparacionArchivo _repo;
     DetalleReparacionArchivo _repoDetalle;
