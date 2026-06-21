@@ -5,14 +5,16 @@ using namespace std;
 Reparacion::Reparacion() : _nroReparacion(0), _fechaEntrega(), _eliminado(false) {
    _cuit[0] = '\0';
    _legajo[0] = '\0';
+   _fechaIngreso.setFechaActual();
 }
 
 Reparacion::Reparacion(int nroReparacion, string cuit, string legajo,
-                       Fecha fechaEntrega)
+                       Fecha fechaIngreso, Fecha fechaEntrega)
    : _fechaEntrega(fechaEntrega), _eliminado(false) {
    setNroReparacion(nroReparacion);
    setCuit(cuit);
    setLegajo(legajo);
+   setFechaIngreso(fechaIngreso);
 }
 
 int Reparacion::getNroReparacion() const { return _nroReparacion; }
@@ -29,6 +31,9 @@ void Reparacion::setLegajo(string legajo) {
    strncpy(_legajo, legajo.c_str(), sizeof(_legajo) - 1);
    _legajo[sizeof(_legajo) - 1] = '\0';
 }
+
+Fecha Reparacion::getFechaIngreso() const { return _fechaIngreso; }
+void Reparacion::setFechaIngreso(Fecha fechaIngreso) { _fechaIngreso = fechaIngreso; }
 
 Fecha Reparacion::getFechaEntrega() const { return _fechaEntrega; }
 void Reparacion::setFechaEntrega(Fecha fechaEntrega) { _fechaEntrega = fechaEntrega; }

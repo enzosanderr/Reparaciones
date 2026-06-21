@@ -6,7 +6,7 @@ class Reparacion {
 public:
    Reparacion();
    Reparacion(int nroReparacion, std::string cuit, std::string legajo,
-              Fecha fechaEntrega);
+               Fecha fechaIngreso, Fecha fechaEntrega);
 
    int getNroReparacion() const;
    void setNroReparacion(int nroReparacion);
@@ -16,6 +16,9 @@ public:
 
    std::string getLegajo() const;
    void setLegajo(std::string legajo);
+
+   void setFechaIngreso(Fecha fechaIngreso);
+   Fecha getFechaIngreso() const;
 
    Fecha getFechaEntrega() const;
    void setFechaEntrega(Fecha fechaEntrega);
@@ -27,6 +30,7 @@ private:
    int _nroReparacion;
    char _cuit[15];
    char _legajo[10];
+   Fecha _fechaIngreso;
    Fecha _fechaEntrega;
    bool _eliminado;
 };

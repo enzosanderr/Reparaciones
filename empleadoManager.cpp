@@ -8,10 +8,10 @@ EmpleadoManager::EmpleadoManager() : _repo() {}
 void EmpleadoManager::cargarInicialesSiVacio() {
    if (_repo.getCantidadRegistros() != 0) return;
 
-   _repo.crear(Empleado("23971", "Agustin Nahuel", "Parada"));
-   _repo.crear(Empleado("28047", "Luz", "Campagnale"));
-   _repo.crear(Empleado("32335", "Enzo Gabriel", "Sander"));
-   _repo.crear(Empleado("31950", "Claudio Andres", "Arce"));
+   _repo.crear(Empleado("123", "Agustin Nahuel", "Parada"));
+   _repo.crear(Empleado("1234", "Luz", "Campagnale"));
+   _repo.crear(Empleado("12345", "Enzo Gabriel", "Sander"));
+   _repo.crear(Empleado("123456", "Claudio Andres", "Arce"));
 }
 
 bool EmpleadoManager::legajoUnico(const string &legajo) {

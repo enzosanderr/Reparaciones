@@ -116,6 +116,7 @@ void ReparacionManager::mostrar(const Reparacion &r)
         cout << "Atendio: " << r.getLegajo() << " (no encontrado)" << endl;
     }
 
+    cout << "Fecha de ingreso: " << r.getFechaIngreso().toString() << endl;
     cout << "Fecha de entrega: " << r.getFechaEntrega().toString() << endl;
 
     cout << "\nEquipos reparados:" << endl;
@@ -141,7 +142,8 @@ void ReparacionManager::mostrar(const Reparacion &r)
     }
     if (!hay) cout << "  (sin equipos cargados)" << endl;
     cout << "\nTOTAL: $" << total << endl;
-    cout << "\n----------------------------------------------------------------------\n" << endl;
+    //cout << "\n----------------------------------------------------------------------\n" << endl;
+    cout << "\n======================================================================\n" << endl;
 }
 
 int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
@@ -194,7 +196,7 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
 
         if (eq.getCuit() != cuit)
         {
-            cout << " > ERROR LOGICO: Este equipo le pertenece al cliente CUIT " << eq.getCuit() << endl;
+            cout << " > ERROR: Este equipo le pertenece al cliente CUIT " << eq.getCuit() << endl;
             cout << "   No se puede cargar en la orden del cliente actual." << endl;
             continue;
         }
@@ -275,7 +277,7 @@ void ReparacionManager::alta()
                 }
                 else
                 {
-                    posCliente = -1; // Forzamos a repetir el bucle si no lo reactiva
+                    posCliente = -1;
                 }
             }
         }
@@ -333,7 +335,7 @@ void ReparacionManager::alta()
 
             else if (fe.aNumero() < fechaActual.aNumero())
             {
-                cout << " > ERROR LOGICO: No puede ingresar una fecha estimada de entrega en el pasado." << endl;
+                cout << " > ERROR: No puede ingresar una fecha estimada de entrega en el pasado." << endl;
                 cout << "   Fecha de hoy: " << fechaActual.toString() << endl;
             }
             else
@@ -344,7 +346,8 @@ void ReparacionManager::alta()
         while (!fechaValida);
 
 
-        Reparacion r(nro, cuit, legajo, fe);
+        Reparacion r(nro, cuit, legajo,fechaActual, fe);
+        //r.setFechaIngreso(fechaActual);
         if (_repo.crear(r))
         {
             cout << "\n>>> EXITO: La Reparacion #" << nro << " se ha guardado en disco con "
@@ -352,7 +355,7 @@ void ReparacionManager::alta()
         }
         else
         {
-            cout << "\n>>> ERROR CRITICO: No se pudo escribir la cabecera en el archivo reparaciones" << endl;
+            cout << "\n>>> ERROR CRITICO: No se pudo escribir en el archivo reparaciones" << endl;
         }
     }
     else
@@ -506,6 +509,8 @@ void ReparacionManager::modificacion()
     {
         system("cls");
         cout << "=== MODIFICAR REPARACION #" << r.getNroReparacion() << " ===" << endl;
+        cout << "\nFecha de Ingreso (No modificable): " << r.getFechaIngreso().toString() << endl;
+        cout << "--------------------------------------------------" << endl;
         cout << "1. Modificar CUIT Cliente (Actual:   " << r.getCuit() << " )" << endl;
         cout << "2. Modificar Legajo Empleado (Actual:   " << r.getLegajo() << " )" << endl;
         cout << "3. Modificar Fecha de Entrega (Actual:   " << r.getFechaEntrega().toString() << " )" << endl;
@@ -561,8 +566,6 @@ void ReparacionManager::modificacion()
             case 3:
             {
                 Fecha nuevaFecha;
-                Fecha fechaActual;
-                fechaActual.setFechaActual();
                 bool fechaValida = false;
 
                 do
@@ -573,13 +576,16 @@ void ReparacionManager::modificacion()
                     {
                         cout << " > ERROR: La fecha ingresada no existe en el calendario." << endl;
                     }
-                    else if (nuevaFecha.aNumero() < fechaActual.aNumero())
+                    else if (nuevaFecha.aNumero() < r.getFechaIngreso().aNumero())
                     {
-                        cout << " > ERROR LOGICO: La fecha de entrega no puede ser anterior a hoy." << endl;
-                        cout << "    La fecha de hoy es: " << fechaActual.toString() << endl;
+                        cout << " > ERROR: La fecha de entrega no puede ser anterior a hoy." << endl;
+                        cout << "    Fecha de ingreso de esta orden: " << r.getFechaIngreso().toString() << endl;
                     }
-                    else
+                    else if(nuevaFecha.aNumero() < r.getFechaIngreso().aNumero())
                     {
+                        cout << " > ERROR: La fecha de entrega no puede ser anterior a la fecha de ingreso del equipo." << endl;
+                    }else{
+
                         fechaValida = true;
                     }
                 }
@@ -594,7 +600,7 @@ void ReparacionManager::modificacion()
                 }
                 else
                 {
-                    cout << " > ERROR: No se pudo guardar la nueva fecha en el disco." << endl;
+                    cout << " > ERROR: No se pudo guardar la nueva fecha en el archivo." << endl;
                 }
                 system("pause");
                 break;
