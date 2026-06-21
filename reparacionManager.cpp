@@ -1,0 +1,796 @@
+#include <iostream>
+#include "reparacionManager.h"
+#include "utils.h"
+#include "clienteManager.h"
+#include "equipoManager.h"
+#include "menu.h"
+
+using namespace std;
+
+ReparacionManager::ReparacionManager()
+    : _repo(), _repoDetalle(), _repoCliente(), _repoEmpleado(), _repoEquipo() {}
+
+float ReparacionManager::calcularTotal(int nroReparacion)
+{
+    int cant = _repoDetalle.getCantidadRegistros();
+    float total = 0;
+    for (int i = 0; i < cant; i++)
+    {
+        DetalleReparacion d = _repoDetalle.leer(i);
+        if (d.getNroReparacion() == nroReparacion && !d.getEliminado())
+        {
+            total += d.getImporte();
+        }
+    }
+    return total;
+}
+
+int ReparacionManager::contarEquiposDeReparacion(int nroReparacion)
+{
+    int cant = _repoDetalle.getCantidadRegistros();
+    int cantidad = 0;
+    for (int i = 0; i < cant; i++)
+    {
+        DetalleReparacion d = _repoDetalle.leer(i);
+        if (d.getNroReparacion() == nroReparacion && !d.getEliminado())
+        {
+            cantidad++;
+        }
+    }
+    return cantidad;
+}
+
+void ReparacionManager::mostrarEquiposDeCliente(const string &cuit)
+{
+    int cant = _repoEquipo.getCantidadRegistros();
+    bool hay = false;
+
+    cout << "\nEquipos del cliente " << cuit << ":" << endl;
+    for (int i = 0; i < cant; i++)
+    {
+        Equipo e = _repoEquipo.leer(i);
+        if (!e.getEliminado() && e.getCuit() == cuit)
+        {
+            cout << "  #" << e.getNroEquipo() << " - " << e.getTipoEquipoString()
+                 << " - " << e.getMarca() << " - " << e.getDescripcion() << endl;
+            hay = true;
+        }
+    }
+    if (!hay) cout << "  (sin equipos cargados)" << endl;
+}
+
+float ReparacionManager::pedirImporte()
+{
+    float importe;
+    do
+    {
+        importe = cargarFloat("Importe: ");
+        if (importe <= 0) cout << " > El importe debe ser mayor a 0." << endl;
+    }
+    while (importe <= 0);
+    return importe;
+}
+
+void ReparacionManager::agregarDetalle(int nroReparacion, int nroEquipo, float importe)
+{
+    DetalleReparacion d(nroReparacion, nroEquipo, importe);
+    _repoDetalle.crear(d);
+}
+
+bool ReparacionManager::detalleYaCargado(int nroReparacion, int nroEquipo)
+{
+    return _repoDetalle.buscarDetalle(nroReparacion, nroEquipo) != -1;
+}
+
+bool ReparacionManager::equipoPerteneceACliente(int nroEquipo, const string &cuit)
+{
+    int pos = _repoEquipo.buscarPorNumero(nroEquipo);
+    if (pos == -1) return false;
+    Equipo e = _repoEquipo.leer(pos);
+    return e.getCuit() == cuit;
+}
+
+void ReparacionManager::mostrar(const Reparacion &r)
+{
+    cout << "Reparacion #" << r.getNroReparacion() << endl;
+
+    int posC = _repoCliente.buscarPorCuit(r.getCuit());
+    if (posC != -1)
+    {
+        Cliente c = _repoCliente.leer(posC);
+        cout << "Cliente: " << r.getCuit() << " - " << c.getNombre() << " " << c.getApellido() << endl;
+    }
+    else
+    {
+        cout << "Cliente: " << r.getCuit() << " (no encontrado)" << endl;
+    }
+
+    int posE = _repoEmpleado.buscarPorLegajo(r.getLegajo());
+    if (posE != -1)
+    {
+        Empleado e = _repoEmpleado.leer(posE);
+        cout << "Atendio: " << r.getLegajo() << " - " << e.getNombre() << " " << e.getApellido() << endl;
+    }
+    else
+    {
+        cout << "Atendio: " << r.getLegajo() << " (no encontrado)" << endl;
+    }
+
+    cout << "Fecha de entrega: " << r.getFechaEntrega().toString() << endl;
+
+    cout << "Equipos reparados:" << endl;
+    int cantD = _repoDetalle.getCantidadRegistros();
+    float total = 0;
+    bool hay = false;
+    for (int i = 0; i < cantD; i++)
+    {
+        DetalleReparacion d = _repoDetalle.leer(i);
+        if (d.getNroReparacion() == r.getNroReparacion() && !d.getEliminado())
+        {
+            cout << "  - Equipo #" << d.getNroEquipo();
+            int posEq = _repoEquipo.buscarPorNumero(d.getNroEquipo());
+            if (posEq != -1)
+            {
+                Equipo eq = _repoEquipo.leer(posEq);
+                cout << " (" << eq.getTipoEquipoString() << " - " << eq.getDescripcion() << ")";
+            }
+            cout << " - Importe: $" << d.getImporte() << endl;
+            total += d.getImporte();
+            hay = true;
+        }
+    }
+    if (!hay) cout << "  (sin equipos cargados)" << endl;
+    cout << "TOTAL: $" << total << endl;
+    cout << "-----------------------------------" << endl;
+}
+
+int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
+{
+    int cargados = 0;
+    EquipoManager mgrEquipo; // Instanciamos el manager para llamadas inline de equipos
+
+    cout << "\n=== CARGA DE EQUIPOS A REPARAR ===" << endl;
+    cout << "(Ingrese 0 como numero de equipo para finalizar)" << endl;
+
+    while (true)
+    {
+        mostrarEquiposDeCliente(cuit);
+        int nroEquipo = cargarEntero("\nNumero de equipo a reparar (0 para finalizar): ");
+
+        if (nroEquipo == 0)
+        {
+            if (cargados == 0)
+            {
+                cout << " > ERROR: Debe asociar al menos un equipo para confirmar la orden de reparacion." << endl;
+                continue;
+            }
+            break; // Salida limpia
+        }
+
+        int posEquipo = _repoEquipo.buscarPorNumero(nroEquipo);
+
+        // ALTA INLINE DE EQUIPO
+        if (posEquipo == -1)
+        {
+            cout << " > El equipo #" << nroEquipo << " no esta registrado en el sistema." << endl;
+            int opcion = cargarEntero("Desea dar de alta un NUEVO equipo para este cliente ahora mismo? (1=Si, 0=No): ");
+            if (opcion == 1)
+            {
+                mgrEquipo.alta(); // Delegamos al formulario de Equipos
+                cout << "\nPor favor, vuelva a ingresar el numero del equipo reci‚n creado." << endl;
+            }
+            continue;
+        }
+
+        Equipo eq = _repoEquipo.leer(posEquipo);
+
+        // Control de estado del equipo
+        if (eq.getEliminado())
+        {
+            cout << " > ERROR: El equipo seleccionado se encuentra marcado como eliminado." << endl;
+            continue;
+        }
+
+        // CONTROL RELACIONAL CRITICO (Integridad referencial cruzada)
+        if (eq.getCuit() != cuit)
+        {
+            cout << " > ERROR LOGICO: Este equipo le pertenece al cliente CUIT " << eq.getCuit() << endl;
+            cout << "   No se puede cargar en la orden del cliente actual." << endl;
+            continue;
+        }
+
+        // Control de redundancia
+        if (detalleYaCargado(nroReparacion, nroEquipo))
+        {
+            cout << " > ERROR: Este equipo ya fue asignado a esta misma orden de trabajo." << endl;
+            continue;
+        }
+
+        // Si paso todos los filtros, pedimos el costo estimado y registramos el hijo
+        float importe = pedirImporte();
+        agregarDetalle(nroReparacion, nroEquipo, importe);
+        cargados++;
+        cout << " >> Equipo #" << nroEquipo << " agregado correctamente al detalle." << endl;
+    }
+
+    return cargados;
+}
+
+void ReparacionManager::alta()
+{
+    cout << "\n=== ALTA DE REPARACION ===" << endl;
+
+    // Removemos el bloqueo inicial si no hay clientes registrados,
+    // ya que ahora podemos crearlos en caliente en este mismo instante.
+    if (_repoEmpleado.getCantidadRegistros() == 0)
+    {
+        cout << " > ERROR CRITICO: No hay empleados registrados en el sistema." << endl;
+        cout << "   Debe registrar al menos un tecnico antes de recibir reparaciones." << endl;
+        return;
+    }
+
+    string cuit;
+    int posCliente = -1;
+    ClienteManager mgrCliente; // Instanciamos el manager para llamadas inline
+
+    // BUCLE DE VALIDACION / ALTA DE CLIENTE
+    while (posCliente == -1)
+    {
+        cuit = cargarTexto("CUIT del cliente (o '0' para cancelar): ", 14);
+        if (cuit == "0")
+        {
+            cout << "\n>> Operacion cancelada por el usuario." << endl;
+            return;
+        }
+
+        posCliente = _repoCliente.buscarPorCuit(cuit);
+
+        if (posCliente == -1)
+        {
+            cout << " > El cliente con CUIT " << cuit << " no esta registrado en el sistema." << endl;
+            int opcion = cargarEntero("Desea dar de alta un NUEVO cliente ahora mismo? (1=Si, 0=No): ");
+            if (opcion == 1)
+            {
+                mgrCliente.alta(); // Delegamos el control al formulario de Clientes
+                cout << "\nPor favor, reingrese el CUIT del cliente recien creado para verificarlo." << endl;
+            }
+            else
+            {
+                cout << "Debe ingresar un CUIT valido para continuar." << endl;
+            }
+        }
+        else
+        {
+            // El cliente existe, verificamos que no este eliminado logicamente
+            Cliente c = _repoCliente.leer(posCliente);
+            if (c.getEliminado())
+            {
+                cout << " > El cliente asociado a este CUIT se encuentra dado de baja logica." << endl;
+                int opcion = cargarEntero("Desea restaurar (reactivar) a este cliente? (1=Si, 0=No): ");
+                if (opcion == 1)
+                {
+                    c.setEliminado(false);
+                    _repoCliente.actualizar(posCliente, c);
+                    cout << " >> Cliente reactivado exitosamente." << endl;
+                }
+                else
+                {
+                    posCliente = -1; // Forzamos a repetir el bucle si no lo reactiva
+                }
+            }
+        }
+    }
+
+    // BUCLE DE VALIDACION DE EMPLEADO (TECNICO)
+    string legajo;
+    int posEmpleado = -1;
+    while (posEmpleado == -1)
+    {
+        legajo = cargarTexto("Legajo del empleado receptor (o '0' para cancelar): ", 9);
+        if (legajo == "0")
+        {
+            cout << "\n>> Operacion cancelada por el usuario." << endl;
+            return;
+        }
+
+        posEmpleado = _repoEmpleado.buscarPorLegajo(legajo);
+        if (posEmpleado == -1)
+        {
+            cout << " > ERROR: El legajo ingresado no corresponde a ningun empleado." << endl;
+        }
+        else
+        {
+            Empleado emp = _repoEmpleado.leer(posEmpleado);
+            if (emp.getEliminado())
+            {
+                cout << " > ERROR: El empleado seleccionado esta dado de baja. Seleccione otro legajo." << endl;
+                posEmpleado = -1;
+            }
+        }
+    }
+
+    // Asignaci¢n segura del ID correlativo de la cabecera
+    int nro = _repo.getNuevoId();
+    cout << "\nNumero de orden de reparacion asignado: " << nro << endl;
+
+    // Pasamos a la carga transaccional de los equipos (Detalles)
+    int cargados = cargarDetalles(nro, cuit);
+
+    // Si y solo si se cargaron equipos reales, procedemos al cierre de la cabecera
+    if (cargados > 0)
+    {
+        Fecha fe;
+        Fecha fechaActual;
+        fechaActual.setFechaActual();
+
+        bool fechaValida = false;
+        do
+        {
+            fe = cargarFecha("Fecha estimada de entrega:");
+
+            if (!fe.esValida())
+            {
+                cout << " > ERROR: La fecha ingresada es invalida a nivel calendario." << endl;
+            }
+            // Validacion temporal
+            else if (fe.aNumero() < fechaActual.aNumero())
+            {
+                cout << " > ERROR LOGICO: No puede ingresar una fecha estimada de entrega en el pasado." << endl;
+                cout << "   Fecha de hoy: " << fechaActual.toString() << endl;
+            }
+            else
+            {
+                fechaValida = true;
+            }
+        }
+        while (!fechaValida);
+
+        // Instancia del registro de cabecera
+        Reparacion r(nro, cuit, legajo, fe);
+        if (_repo.crear(r))
+        {
+            cout << "\n>>> EXITO: La Reparacion #" << nro << " se ha guardado en disco con "
+                 << cargados << " equipo(s) en su detalle." << endl;
+        }
+        else
+        {
+            cout << "\n>>> ERROR CRITICO: No se pudo escribir la cabecera en reparaciones.dat" << endl;
+        }
+    }
+    else
+    {
+        cout << "\n>>> Alta cancelada. No se genero ningun registro en la base de datos." << endl;
+    }
+}
+
+
+void ReparacionManager::baja()
+{
+    cout << "\n=== BAJA DE REPARACION ===" << endl;
+    int nro = cargarEntero("Ingrese numero de reparacion: ");
+
+    int pos = _repo.buscarPorNumero(nro);
+    if (pos == -1)
+    {
+        cout << "\nReparacion no encontrada o ya esta eliminada." << endl;
+        return;
+    }
+
+    Reparacion r = _repo.leer(pos);
+    r.setEliminado(true);
+    if (!_repo.actualizar(pos, r))
+    {
+        cout << "\nError al dar de baja la reparacion." << endl;
+        return;
+    }
+
+    int cantD = _repoDetalle.getCantidadRegistros();
+    for (int i = 0; i < cantD; i++)
+    {
+        DetalleReparacion d = _repoDetalle.leer(i);
+        if (d.getNroReparacion() == nro && !d.getEliminado())
+        {
+            d.setEliminado(true);
+            _repoDetalle.actualizar(i, d);
+        }
+    }
+
+    cout << "\nReparacion dada de baja exitosamente (incluye sus detalles)." << endl;
+}
+
+void ReparacionManager::modificarDetalles(const Reparacion &r)
+{
+    int opcion;
+
+    do
+    {
+        cout << "\n=== DETALLES DE LA REPARACION #" << r.getNroReparacion() << " ===" << endl;
+        cout << "1. Agregar equipo al detalle" << endl;
+        cout << "2. Modificar importe de un equipo" << endl;
+        cout << "3. Quitar equipo del detalle" << endl;
+        cout << "4. Ver detalles actuales" << endl;
+        cout << "0. Terminar modificacion de detalles" << endl;
+        opcion = cargarEntero("Seleccione una opcion: ");
+
+        if (opcion == 1)
+        {
+            mostrarEquiposDeCliente(r.getCuit());
+            int nroEquipo = cargarEntero("\nNumero de equipo a agregar (0 para cancelar): ");
+            if (nroEquipo == 0) continue;
+            if (_repoEquipo.buscarPorNumero(nroEquipo) == -1)
+            {
+                cout << "El equipo no existe o esta eliminado." << endl;
+                continue;
+            }
+            if (!equipoPerteneceACliente(nroEquipo, r.getCuit()))
+            {
+                cout << "El equipo no pertenece al cliente de la reparacion." << endl;
+                continue;
+            }
+            if (detalleYaCargado(r.getNroReparacion(), nroEquipo))
+            {
+                cout << "Ese equipo ya esta en el detalle." << endl;
+                continue;
+            }
+            float importe = pedirImporte();
+            agregarDetalle(r.getNroReparacion(), nroEquipo, importe);
+            cout << "Equipo agregado." << endl;
+        }
+        else if (opcion == 2)
+        {
+            int nroEquipo = cargarEntero("Numero de equipo cuyo importe desea modificar: ");
+            int posDetalle = _repoDetalle.buscarDetalle(r.getNroReparacion(), nroEquipo);
+            if (posDetalle == -1)
+            {
+                cout << "Ese equipo no esta en el detalle." << endl;
+                continue;
+            }
+            DetalleReparacion d = _repoDetalle.leer(posDetalle);
+            cout << "Importe actual: $" << d.getImporte() << endl;
+            d.setImporte(pedirImporte());
+            _repoDetalle.actualizar(posDetalle, d);
+            cout << "Importe modificado." << endl;
+        }
+        else if (opcion == 3)
+        {
+            int nroEquipo = cargarEntero("Numero de equipo a quitar del detalle: ");
+            int posDetalle = _repoDetalle.buscarDetalle(r.getNroReparacion(), nroEquipo);
+            if (posDetalle == -1)
+            {
+                cout << "Ese equipo no esta en el detalle." << endl;
+                continue;
+            }
+            if (contarEquiposDeReparacion(r.getNroReparacion()) <= 1)
+            {
+                cout << "No se puede quitar: la reparacion debe tener al menos un equipo." << endl;
+                continue;
+            }
+            DetalleReparacion d = _repoDetalle.leer(posDetalle);
+            d.setEliminado(true);
+            _repoDetalle.actualizar(posDetalle, d);
+            cout << "Equipo quitado del detalle." << endl;
+        }
+        else if (opcion == 4)
+        {
+            mostrar(r);
+        }
+    }
+    while (opcion != 0);
+}
+
+void ReparacionManager::modificacion()
+{
+    cout << "\n=== MODIFICACION DE REPARACION ===" << endl;
+
+    int nro = seleccionarReparacion();
+
+    if(nro == -1) return;
+
+
+    int pos = _repo.buscarPorNumero(nro);
+    if (pos == -1) {
+        cout << " > La reparacion no existe en el archivo." << endl;
+        system("pause");
+        return;
+    }
+
+
+    Reparacion r = _repo.leer(pos);
+    if (r.getEliminado())
+    {
+        cout << " > ERROR: La reparacion seleccionada se encuentra eliminada (Baja Logica)." << endl;
+        system("pause");
+        return;
+    }
+
+    int opcion;
+    do
+    {
+        system("cls");
+        cout << "=== MODIFICAR REPARACION #" << r.getNroReparacion() << " ===" << endl;
+        cout << "1. Modificar CUIT Cliente (Actual:   " << r.getCuit() << " )" << endl;
+        cout << "2. Modificar Legajo Empleado (Actual:   " << r.getLegajo() << " )" << endl;
+        cout << "3. Modificar Fecha de Entrega (Actual:   " << r.getFechaEntrega().toString() << " )" << endl;
+        cout << "0. Volver al menu anterior" << endl;
+
+        opcion = cargarEntero("\nSeleccione una opcion: ");
+
+        switch (opcion)
+        {
+            case 1:
+            {
+                string nuevoCuit = cargarTexto("Ingrese el nuevo CUIT: ", 14);
+
+                if (_repoCliente.buscarPorCuit(nuevoCuit) == -1)
+                {
+                    cout << " > ERROR: El cliente no existe o esta dado de baja." << endl;
+                }
+                else
+                {
+                    r.setCuit(nuevoCuit);
+
+                    if (_repo.actualizar(pos, r)) {
+                        cout << " >> CUIT modificado exitosamente en el archivo." << endl;
+                    } else {
+                        cout << " > ERROR: No se pudo actualizar el CUIT en el disco." << endl;
+                    }
+                }
+                system("pause");
+                break;
+            }
+            case 2:
+            {
+                string nuevoLegajo = cargarTexto("Ingrese el nuevo Legajo: ", 9);
+
+                if (_repoEmpleado.buscarPorLegajo(nuevoLegajo) == -1)
+                {
+                    cout << " > ERROR: El empleado no existe o esta dado de baja." << endl;
+                }
+                else
+                {
+                    r.setLegajo(nuevoLegajo);
+
+
+                    if (_repo.actualizar(pos, r)) {
+                        cout << " >> Legajo modificado exitosamente en el archivo." << endl;
+                    } else {
+                        cout << " > ERROR: No se pudo actualizar el Legajo en el disco." << endl;
+                    }
+                }
+                system("pause");
+                break;
+            }
+            case 3:
+            {
+                Fecha nuevaFecha;
+                Fecha fechaActual;
+                fechaActual.setFechaActual();
+                bool fechaValida = false;
+
+                do
+                {
+                    nuevaFecha = cargarFecha("Ingrese la NUEVA fecha de entrega:");
+
+                    if (!nuevaFecha.esValida())
+                    {
+                        cout << " > ERROR: La fecha ingresada no existe en el calendario." << endl;
+                    }
+                    else if (nuevaFecha.aNumero() < fechaActual.aNumero())
+                    {
+                        cout << " > ERROR LOGICO: La fecha de entrega no puede ser anterior a hoy." << endl;
+                        cout << "    La fecha de hoy es: " << fechaActual.toString() << endl;
+                    }
+                    else
+                    {
+                        fechaValida = true;
+                    }
+                }
+                while (!fechaValida);
+
+                r.setFechaEntrega(nuevaFecha);
+
+
+                if (_repo.actualizar(pos, r))
+                {
+                    cout << " >> Fecha de entrega modificada exitosamente!." << endl;
+                }
+                else
+                {
+                    cout << " > ERROR: No se pudo guardar la nueva fecha en el disco." << endl;
+                }
+                system("pause");
+                break;
+            }
+
+            case 0:
+                break;
+
+            default:
+                cout << " > Opcion incorrecta." << endl;
+                system("pause");
+                break;
+        }
+    }
+    while (opcion != 0);
+}
+
+int ReparacionManager::seleccionarReparacion() {
+    int opcion;
+    do {
+        cout << "\n=== BUSCAR REPARACION ===" << endl;
+        cout << "1. Buscar por ID (Nro de Reparacion)" << endl;
+        cout << "2. Buscar por CUIT de Cliente" << endl;
+        cout << "3. Ver ultimas 10 reparaciones" << endl;
+        cout << "0. Cancelar" << endl;
+
+        opcion = cargarEntero("Seleccione opcion: ");
+
+        switch(opcion) {
+            case 1: return buscarPorId();
+            case 2: return buscarPorCuit();
+            case 3: return seleccionarDeUltimasDiez();
+            case 0: return -1;
+            default: cout << " > Opcion invalida." << endl;
+        }
+    } while (opcion != 0);
+
+    return -1;
+}
+
+int ReparacionManager::buscarPorId() {
+    int nro = cargarEntero("Ingrese el ID (Nro Reparacion) a buscar: ");
+
+    int pos = _repo.buscarPorNumero(nro);
+    if (pos == -1) {
+        cout << " > No se encontro ninguna reparacion con ese ID." << endl;
+        return -1;
+    }
+
+    Reparacion r = _repo.leer(pos);
+    if (r.getEliminado()) {
+        cout << " > La reparacion con ese ID se encuentra dada de baja." << endl;
+        return -1;
+    }
+
+    return nro;
+}
+
+int ReparacionManager::buscarPorCuit() {
+    string cuitBuscado = cargarCadena("Ingrese el CUIT del cliente: ");
+
+    int cant = _repo.getCantidadRegistros();
+    if (cant == 0) {
+        cout << " > No hay reparaciones registradas en el sistema." << endl;
+        return -1;
+    }
+
+    Reparacion *v = new Reparacion[cant];
+
+    _repo.leerTodos(v, cant);
+
+    bool hay = false;
+    cout << "\n--- Reparaciones del CUIT " << cuitBuscado << " ---" << endl;
+
+    for (int i = 0; i < cant; i++) {
+        if (!v[i].getEliminado() && v[i].getCuit() == cuitBuscado) {
+            mostrar(v[i]);
+            cout << "-----------------------------------" << endl;
+            hay = true;
+        }
+    }
+
+    delete[] v;
+
+    if (!hay) {
+        cout << " > No se encontraron reparaciones activas para ese CUIT." << endl;
+        return -1;
+    }
+
+    // usuario elige de la lista
+    return cargarEntero("Ingrese el Nro de Reparacion que desea seleccionar (o -1 para cancelar): ");
+}
+
+int ReparacionManager::seleccionarDeUltimasDiez() {
+    int cant = _repo.getCantidadRegistros();
+    if (cant == 0) {
+        cout << " > No hay reparaciones registradas en el sistema." << endl;
+        return -1;
+    }
+
+    Reparacion *v = new Reparacion[cant];
+    _repo.leerTodos(v, cant);
+
+    int inicio;
+    if (cant > 10) {
+        inicio = cant - 10;
+    } else {
+        inicio = 0;
+    }
+
+    bool hay = false;
+
+    //muestra registros
+    cout << "\n--- Ultimas Reparaciones Registradas ---" << endl;
+    for (int i = inicio; i < cant; i++) {
+        if (!v[i].getEliminado()) {
+            mostrar(v[i]);
+            cout << "-----------------------------------" << endl;
+            hay = true;
+        }
+    }
+
+    delete[] v;
+
+    if (!hay) {
+        cout << " > Las ultimas reparaciones registradas estan dadas de baja." << endl;
+        return -1;
+    }
+
+
+    return cargarEntero("Ingrese el Nro de Reparacion que desea seleccionar (o -1 para cancelar): ");
+}
+
+void ReparacionManager::listado()
+{
+    cout << "\n=== LISTADO DE REPARACIONES ===" << endl;
+    int cantidad = _repo.getCantidadRegistros();
+    if (cantidad == 0)
+    {
+        cout << "No hay reparaciones registradas." << endl;
+        return;
+    }
+
+    bool hay = false;
+    for (int i = 0; i < cantidad; i++)
+    {
+        Reparacion r = _repo.leer(i);
+        if (!r.getEliminado())
+        {
+            mostrar(r);
+            hay = true;
+        }
+    }
+    if (!hay) cout << "No hay reparaciones activas." << endl;
+}
+
+void ReparacionManager::listadoPorFechaEntrega()
+{
+    cout << "\n=== LISTADO DE REPARACIONES (ORDENADO POR FECHA DE ENTREGA) ===" << endl;
+    int cantidad = _repo.getCantidadRegistros();
+    if (cantidad == 0)
+    {
+        cout << "No hay reparaciones registradas." << endl;
+        return;
+    }
+
+    Reparacion *v = new Reparacion[cantidad];
+    _repo.leerTodos(v, cantidad);
+
+    for (int i = 0; i < cantidad - 1; i++)
+    {
+        int min = i;
+        for (int j = i + 1; j < cantidad; j++)
+        {
+            if (v[j].getFechaEntrega().aNumero() < v[min].getFechaEntrega().aNumero()) min = j;
+        }
+        if (min != i)
+        {
+            Reparacion tmp = v[i];
+            v[i] = v[min];
+            v[min] = tmp;
+        }
+    }
+
+    bool hay = false;
+    for (int i = 0; i < cantidad; i++)
+    {
+        if (!v[i].getEliminado())
+        {
+            mostrar(v[i]);
+            hay = true;
+        }
+    }
+    if (!hay) cout << "No hay reparaciones activas." << endl;
+
+    delete[] v;
+}

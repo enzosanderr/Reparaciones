@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Reparaciones" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/Reparaciones" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/Reparaciones" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-std=c++17" />
+		</Compiler>
+		<Unit filename="app.cpp" />
+		<Unit filename="app.h" />
+		<Unit filename="backupMenu.cpp" />
+		<Unit filename="backupMenu.h" />
+		<Unit filename="cliente.cpp" />
+		<Unit filename="cliente.h" />
+		<Unit filename="clienteArchivo.cpp" />
+		<Unit filename="clienteArchivo.h" />
+		<Unit filename="clienteManager.cpp" />
+		<Unit filename="clienteManager.h" />
+		<Unit filename="clienteMenu.cpp" />
+		<Unit filename="clienteMenu.h" />
+		<Unit filename="configuracionManager.cpp" />
+		<Unit filename="configuracionManager.h" />
+		<Unit filename="configuracionMenu.cpp" />
+		<Unit filename="configuracionMenu.h" />
+		<Unit filename="consultaManager.cpp" />
+		<Unit filename="consultaManager.h" />
+		<Unit filename="consultaMenu.cpp" />
+		<Unit filename="consultaMenu.h" />
+		<Unit filename="detalleReparacion.cpp" />
+		<Unit filename="detalleReparacion.h" />
+		<Unit filename="detalleReparacionArchivo.cpp" />
+		<Unit filename="detalleReparacionArchivo.h" />
+		<Unit filename="empleado.cpp" />
+		<Unit filename="empleado.h" />
+		<Unit filename="empleadoArchivo.cpp" />
+		<Unit filename="empleadoArchivo.h" />
+		<Unit filename="empleadoManager.cpp" />
+		<Unit filename="empleadoManager.h" />
+		<Unit filename="empleadoMenu.cpp" />
+		<Unit filename="empleadoMenu.h" />
+		<Unit filename="equipo.cpp" />
+		<Unit filename="equipo.h" />
+		<Unit filename="equipoArchivo.cpp" />
+		<Unit filename="equipoArchivo.h" />
+		<Unit filename="equipoManager.cpp" />
+		<Unit filename="equipoManager.h" />
+		<Unit filename="equipoMenu.cpp" />
+		<Unit filename="equipoMenu.h" />
+		<Unit filename="exportarCsvMenu.cpp" />
+		<Unit filename="exportarCsvMenu.h" />
+		<Unit filename="fecha.cpp" />
+		<Unit filename="fecha.h" />
+		<Unit filename="informeManager.cpp" />
+		<Unit filename="informeManager.h" />
+		<Unit filename="informeMenu.cpp" />
+		<Unit filename="informeMenu.h" />
+		<Unit filename="main.cpp" />
+		<Unit filename="menu.cpp" />
+		<Unit filename="menu.h" />
+		<Unit filename="reparacion.cpp" />
+		<Unit filename="reparacion.h" />
+		<Unit filename="reparacionArchivo.cpp" />
+		<Unit filename="reparacionArchivo.h" />
+		<Unit filename="reparacionManager.cpp" />
+		<Unit filename="reparacionManager.h" />
+		<Unit filename="reparacionMenu.cpp" />
+		<Unit filename="reparacionMenu.h" />
+		<Unit filename="restaurarMenu.cpp" />
+		<Unit filename="restaurarMenu.h" />
+		<Unit filename="utils.cpp" />
+		<Unit filename="utils.h" />
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>
