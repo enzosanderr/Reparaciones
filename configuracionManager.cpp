@@ -2,9 +2,18 @@
 #include <fstream>
 #include <iomanip>
 #include <cstdio>
-#include <direct.h>
 #include "configuracionManager.h"
 #include "utils.h"
+
+//portabilidad
+#ifdef _WIN32
+    #include <direct.h>  //Para Windows
+    #define MKDIR(dir) _mkdir(dir)
+#else
+    #include <sys/stat.h> // Para Linux / macOS
+    #define MKDIR(dir) mkdir(dir, 0777)
+#endif
+
 using namespace std;
 
 ConfiguracionManager::ConfiguracionManager()
@@ -12,7 +21,7 @@ ConfiguracionManager::ConfiguracionManager()
      _repoReparacion(), _repoDetalle() {}
 
 void ConfiguracionManager::asegurarCarpeta(const string &nombre) {
-   _mkdir(nombre.c_str());
+    MKDIR(nombre.c_str());
 }
 
 bool ConfiguracionManager::copiarArchivo(const string &origen, const string &destino) {
@@ -110,23 +119,31 @@ void ConfiguracionManager::restaurarTodos() {
 
    const string archivos[] = {"clientes.dat", "equipos.dat", "empleados.dat",
                               "reparaciones.dat", "detalleReparaciones.dat"};
+
+   //validacion de existencia de backups
    for (int i = 0; i < 5; i++) {
       string origen = rutaBackup(archivos[i]);
       FILE *test = fopen(origen.c_str(), "rb");
       if (test == nullptr) {
-         cout << "(omitido) No existe backup para: " << archivos[i] << endl;
-         continue;
+         cout << "ERROR CRITICO: Falta el archivo de respaldo: " << archivos[i] << endl;
+         cout << "Restauracion abortada para proteger la integridad de los datos actuales." << endl;
+         return;
       }
       fclose(test);
+   }
 
+  //restauracion
+   for (int i = 0; i < 5; i++) {
+      string origen = rutaBackup(archivos[i]);
       if (copiarArchivo(origen, archivos[i])) {
          cout << "Restauracion OK: " << archivos[i] << endl;
       } else {
-         cout << "ERROR al restaurar: " << archivos[i] << endl;
+         cout << "ERROR critico al sobreescribir de: " << archivos[i] << endl;
       }
    }
    cout << "Restauracion completa." << endl;
 }
+
 
 void ConfiguracionManager::exportarClientesCSV() {
    asegurarCarpeta("exports");
@@ -136,14 +153,14 @@ void ConfiguracionManager::exportarClientesCSV() {
       return;
    }
 
-   csv << "cuit,nombre,apellido,telefono,email,direccion,tipoCliente" << endl;
+   csv << "cuit;nombre;apellido;telefono;email;direccion;tipoCliente" << endl;
    int cant = _repoCliente.getCantidadRegistros();
    int exportados = 0;
    for (int i = 0; i < cant; i++) {
       Cliente c = _repoCliente.leer(i);
       if (c.getEliminado()) continue;
-      csv << c.getCuit() << "," << c.getNombre() << "," << c.getApellido() << ","
-          << c.getTelefono() << "," << c.getEmail() << "," << c.getDireccion() << ","
+      csv << c.getCuit() << ";" << c.getNombre() << ";" << c.getApellido() << ";"
+          << c.getTelefono() << ";" << c.getEmail() << ";" << c.getDireccion() << ";"
           << c.getTipoClienteString() << endl;
       exportados++;
    }
@@ -158,14 +175,14 @@ void ConfiguracionManager::exportarEquiposCSV() {
       return;
    }
 
-   csv << "nroEquipo,cuitCliente,descripcion,marca,tipoEquipo,fechaIngreso" << endl;
+   csv << "nroEquipo;cuitCliente;descripcion;marca;tipoEquipo;fechaIngreso" << endl;
    int cant = _repoEquipo.getCantidadRegistros();
    int exportados = 0;
    for (int i = 0; i < cant; i++) {
       Equipo e = _repoEquipo.leer(i);
       if (e.getEliminado()) continue;
-      csv << e.getNroEquipo() << "," << e.getCuit() << "," << e.getDescripcion() << ","
-          << e.getMarca() << "," << e.getTipoEquipoString() << ","
+      csv << e.getNroEquipo() << ";" << e.getCuit() << ";" << e.getDescripcion() << ";"
+          << e.getMarca() << ";" << e.getTipoEquipoString() << ";"
           << e.getFechaIngreso().toString() << endl;
       exportados++;
    }
@@ -180,17 +197,18 @@ void ConfiguracionManager::exportarEmpleadosCSV() {
       return;
    }
 
-   csv << "legajo,nombre,apellido" << endl;
+   csv << "legajo;nombre;apellido" << endl;
    int cant = _repoEmpleado.getCantidadRegistros();
    int exportados = 0;
    for (int i = 0; i < cant; i++) {
       Empleado e = _repoEmpleado.leer(i);
       if (e.getEliminado()) continue;
-      csv << e.getLegajo() << "," << e.getNombre() << "," << e.getApellido() << endl;
+      csv << e.getLegajo() << ";" << e.getNombre() << ";" << e.getApellido() << endl;
       exportados++;
    }
    cout << "Exportados " << exportados << " empleados a exports/empleados.csv" << endl;
 }
+
 
 void ConfiguracionManager::exportarReparacionesCSV() {
    asegurarCarpeta("exports");
@@ -200,9 +218,18 @@ void ConfiguracionManager::exportarReparacionesCSV() {
       return;
    }
 
-   csv << "nroReparacion,cuitCliente,legajoEmpleado,fechaEntrega,cantidadEquipos,importeTotal" << endl;
    int cant = _repoReparacion.getCantidadRegistros();
    int cantD = _repoDetalle.getCantidadRegistros();
+
+   DetalleReparacion* vDetalles = new DetalleReparacion[cantD];
+   if (vDetalles == nullptr) {
+       cout << "ERROR: Sin memoria RAM para optimizar la exportacion de reparaciones." << endl;
+       return;
+   }
+
+   _repoDetalle.leerTodos(vDetalles, cantD);
+
+   csv << "nroReparacion;cuitCliente;legajoEmpleado;fechaEntrega;cantidadEquipos;importeTotal" << endl;
    int exportados = 0;
    for (int i = 0; i < cant; i++) {
       Reparacion r = _repoReparacion.leer(i);
@@ -210,19 +237,23 @@ void ConfiguracionManager::exportarReparacionesCSV() {
 
       int cantEquipos = 0;
       float total = 0;
+
+
       for (int j = 0; j < cantD; j++) {
-         DetalleReparacion d = _repoDetalle.leer(j);
+         DetalleReparacion d = vDetalles[j];
          if (d.getNroReparacion() == r.getNroReparacion() && !d.getEliminado()) {
             cantEquipos++;
             total += d.getImporte();
          }
       }
 
-      csv << r.getNroReparacion() << "," << r.getCuit() << "," << r.getLegajo() << ","
-          << r.getFechaEntrega().toString() << "," << cantEquipos << ","
+      csv << r.getNroReparacion() << ";" << r.getCuit() << ";" << r.getLegajo() << ";"
+          << r.getFechaEntrega().toString() << ";" << cantEquipos << ";"
           << fixed << setprecision(2) << total << endl;
       exportados++;
    }
+
+   delete[] vDetalles;
    cout << "Exportadas " << exportados << " reparaciones a exports/reparaciones.csv" << endl;
 }
 
@@ -234,18 +265,19 @@ void ConfiguracionManager::exportarDetalleReparacionesCSV() {
       return;
    }
 
-   csv << "nroReparacion,nroEquipo,importe" << endl;
+   csv << "nroReparacion;nroEquipo;importe" << endl;
    int cant = _repoDetalle.getCantidadRegistros();
    int exportados = 0;
    for (int i = 0; i < cant; i++) {
       DetalleReparacion d = _repoDetalle.leer(i);
       if (d.getEliminado()) continue;
-      csv << d.getNroReparacion() << "," << d.getNroEquipo() << ","
+      csv << d.getNroReparacion() << ";" << d.getNroEquipo() << ";"
           << fixed << setprecision(2) << d.getImporte() << endl;
       exportados++;
    }
    cout << "Exportados " << exportados << " detalles a exports/detalleReparaciones.csv" << endl;
 }
+
 
 void ConfiguracionManager::exportarTodosCSV() {
    cout << "\nExportando todos los archivos a CSV..." << endl;

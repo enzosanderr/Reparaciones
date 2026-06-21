@@ -45,7 +45,6 @@
 		<Unit filename="configuracionManager.h" />
 		<Unit filename="configuracionMenu.cpp" />
 		<Unit filename="configuracionMenu.h" />
-		<Unit filename="consultaManager.cpp" />
 		<Unit filename="consultaManager.h" />
 		<Unit filename="detalleReparacion.cpp" />
 		<Unit filename="detalleReparacion.h" />
@@ -71,8 +70,6 @@
 		<Unit filename="exportarCsvMenu.h" />
 		<Unit filename="fecha.cpp" />
 		<Unit filename="fecha.h" />
-		<Unit filename="generarDatos.cpp" />
-		<Unit filename="generarDatos.h" />
 		<Unit filename="informeManager.cpp" />
 		<Unit filename="informeManager.h" />
 		<Unit filename="informeMenu.cpp" />

@@ -27,5 +27,4 @@ void RestaurarMenu::ejecutarOpcion(int opcion) {
       case 6: _manager.restaurarTodos(); break;
       case 0: return;
    }
-   pausar();
 }

@@ -7,11 +7,11 @@ ConfiguracionMenu::ConfiguracionMenu() {
 }
 
 void ConfiguracionMenu::mostrarOpciones() {
-   cout << "=== MENU CONFIGURACION ===" << endl;
+   cout << "=== MENU ADMINISTRACION DE DATOS ===" << endl<<endl;
    cout << "1. Realizar copia de seguridad" << endl;
    cout << "2. Restaurar copia de seguridad" << endl;
    cout << "3. Exportar datos a CSV" << endl;
-   cout << "0. Volver al menu principal" << endl;
+   cout << "0. Volver al menu principal" << endl<<endl;
 }
 
 void ConfiguracionMenu::ejecutarOpcion(int opcion) {

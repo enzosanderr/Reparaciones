@@ -27,5 +27,4 @@ void ExportarCsvMenu::ejecutarOpcion(int opcion) {
       case 6: _manager.exportarTodosCSV(); break;
       case 0: return;
    }
-   pausar();
 }

@@ -13,8 +13,8 @@ void App::mostrarOpciones() {
     cout << "3. Empleados" << endl;
     cout << "4. Reparaciones" << endl;
     cout << "5. Informes" << endl;
-    cout << "6. Configuracion (Backup / CSV)" << endl;
-    cout << "0. Salir" << endl;
+    cout << "6. Administraci¢n de Datos (Backup / CSV)" << endl;
+    cout << "0. Salir" << endl<<endl;
 }
 
 void App::ejecutarOpcion(int opcion) {
@@ -25,6 +25,6 @@ void App::ejecutarOpcion(int opcion) {
         case 4: _menuReparacion.run(); break;
         case 5: _menuInforme.run(); break;
         case 6: _menuConfiguracion.run(); break;
-        case 0: cout << "Saliendo..." << endl; break;
+        case 0: cout << "\nSaliendo..." << endl; break;
     }
 }
