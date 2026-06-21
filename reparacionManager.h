@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include "reparacionArchivo.h"
 #include "detalleReparacionArchivo.h"
 #include "clienteArchivo.h"
@@ -28,10 +29,13 @@ private:
     bool detalleYaCargado(int nroReparacion, int nroEquipo);
     bool equipoPerteneceACliente(int nroEquipo, const std::string &cuit);
     void modificarDetalles(const Reparacion &r);
+    std::string getNombreEstado(int estado);
+    void listarPorEstado();
     int seleccionarReparacion();
     int buscarPorId();
     int buscarPorCuit();
     int seleccionarDeUltimasDiez();
+    bool equipoTieneReparacionAbierta(int nroEquipo);
 
     ReparacionArchivo _repo;
     DetalleReparacionArchivo _repoDetalle;

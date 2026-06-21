@@ -23,6 +23,9 @@ public:
    Fecha getFechaEntrega() const;
    void setFechaEntrega(Fecha fechaEntrega);
 
+    int getEstado() const;
+    void setEstado(int estado);
+
    bool getEliminado() const;
    void setEliminado(bool eliminado);
 
@@ -32,5 +35,6 @@ private:
    char _legajo[10];
    Fecha _fechaIngreso;
    Fecha _fechaEntrega;
+   int _estado;
    bool _eliminado;
 };

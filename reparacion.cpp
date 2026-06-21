@@ -2,7 +2,7 @@
 #include "reparacion.h"
 using namespace std;
 
-Reparacion::Reparacion() : _nroReparacion(0), _fechaEntrega(), _eliminado(false) {
+Reparacion::Reparacion() : _nroReparacion(0), _fechaEntrega(), _estado(1), _eliminado(false) {
    _cuit[0] = '\0';
    _legajo[0] = '\0';
    _fechaIngreso.setFechaActual();
@@ -10,7 +10,7 @@ Reparacion::Reparacion() : _nroReparacion(0), _fechaEntrega(), _eliminado(false)
 
 Reparacion::Reparacion(int nroReparacion, string cuit, string legajo,
                        Fecha fechaIngreso, Fecha fechaEntrega)
-   : _fechaEntrega(fechaEntrega), _eliminado(false) {
+   : _fechaEntrega(fechaEntrega), _estado(1), _eliminado(false) {
    setNroReparacion(nroReparacion);
    setCuit(cuit);
    setLegajo(legajo);
@@ -37,6 +37,13 @@ void Reparacion::setFechaIngreso(Fecha fechaIngreso) { _fechaIngreso = fechaIngr
 
 Fecha Reparacion::getFechaEntrega() const { return _fechaEntrega; }
 void Reparacion::setFechaEntrega(Fecha fechaEntrega) { _fechaEntrega = fechaEntrega; }
+
+int Reparacion::getEstado() const { return _estado; }
+void Reparacion::setEstado(int estado) {
+    if (estado >= 1 && estado <= 3) {
+        _estado = estado;
+    }
+}
 
 bool Reparacion::getEliminado() const { return _eliminado; }
 void Reparacion::setEliminado(bool eliminado) { _eliminado = eliminado; }

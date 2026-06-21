@@ -119,6 +119,8 @@ void ReparacionManager::mostrar(const Reparacion &r)
     cout << "Fecha de ingreso: " << r.getFechaIngreso().toString() << endl;
     cout << "Fecha de entrega: " << r.getFechaEntrega().toString() << endl;
 
+    cout << "\nEstado actual:    " << getNombreEstado(r.getEstado()) << endl;
+
     cout << "\nEquipos reparados:" << endl;
     int cantD = _repoDetalle.getCantidadRegistros();
     float total = 0;
@@ -193,6 +195,13 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
             continue;
         }
 
+     //validacion de estado
+        if (equipoTieneReparacionAbierta(nroEquipo))
+        {
+            cout << " > ERROR: El equipo #" << nroEquipo << " ya se encuentra en el taller" << endl;
+            cout << "   con una orden de reparacion abierta o en proceso actualmente." << endl;
+            continue;
+        }
 
         if (eq.getCuit() != cuit)
         {
@@ -364,28 +373,59 @@ void ReparacionManager::alta()
     }
 }
 
-
 void ReparacionManager::baja()
 {
     cout << "\n=== BAJA DE REPARACION ===" << endl;
-    int nro = cargarEntero("Ingrese numero de reparacion: ");
+
+    int nro = seleccionarReparacion();
+    if (nro <= 0) return;
 
     int pos = _repo.buscarPorNumero(nro);
     if (pos == -1)
     {
-        cout << "\nReparacion no encontrada o ya esta eliminada." << endl;
+        cout << "\n > La reparacion #" << nro << " no existe en el sistema." << endl;
+        system("pause");
         return;
     }
 
     Reparacion r = _repo.leer(pos);
-    r.setEliminado(true);
-    if (!_repo.actualizar(pos, r))
+
+    //no permitite borrar reparaciones finalizadas
+    if (r.getEstado() == 3)
     {
-        cout << "\nError al dar de baja la reparacion." << endl;
+        cout << "\n > ERROR: No se puede dar de baja una reparacion TERMINADA." << endl;
+        system("pause");
         return;
     }
 
+    if (r.getEliminado())
+    {
+        cout << "\n > La reparacion ya se encuentra dada de baja." << endl;
+        system("pause");
+        return;
+    }
+
+    system("cls");
+    mostrar(r);
+    int confirmar = cargarEntero("Confirma la baja de esta orden? (1=Si, 0=No): ");
+    if (confirmar != 1)
+    {
+        cout << " >> Operacion cancelada." << endl;
+        system("pause");
+        return;
+    }
+
+    r.setEliminado(true);
+    if (!_repo.actualizar(pos, r))
+    {
+        cout << "\n > ERROR: No se pudo registrar la baja en el archivo." << endl;
+        system("pause");
+        return;
+    }
+
+
     int cantD = _repoDetalle.getCantidadRegistros();
+    int detallesBorrados = 0;
     for (int i = 0; i < cantD; i++)
     {
         DetalleReparacion d = _repoDetalle.leer(i);
@@ -393,10 +433,13 @@ void ReparacionManager::baja()
         {
             d.setEliminado(true);
             _repoDetalle.actualizar(i, d);
+            detallesBorrados++;
         }
     }
 
-    cout << "\nReparacion dada de baja exitosamente (incluye sus detalles)." << endl;
+    cout << "\n>>> EXITO: Reparacion #" << nro << " y " << detallesBorrados
+         << " detalle(s) asociados dados de baja." << endl;
+    system("pause");
 }
 
 void ReparacionManager::modificarDetalles(const Reparacion &r)
@@ -514,6 +557,7 @@ void ReparacionManager::modificacion()
         cout << "1. Modificar CUIT Cliente (Actual:   " << r.getCuit() << " )" << endl;
         cout << "2. Modificar Legajo Empleado (Actual:   " << r.getLegajo() << " )" << endl;
         cout << "3. Modificar Fecha de Entrega (Actual:   " << r.getFechaEntrega().toString() << " )" << endl;
+        cout << "4. Cambiar Estado de la Reparacion (Actual: " << getNombreEstado(r.getEstado()) << " )" << endl;
         cout << "0. Volver al menu anterior" << endl;
 
         opcion = cargarEntero("\nSeleccione una opcion: ");
@@ -593,14 +637,37 @@ void ReparacionManager::modificacion()
 
                 r.setFechaEntrega(nuevaFecha);
 
+                r.setEstado(3);
 
                 if (_repo.actualizar(pos, r))
                 {
-                    cout << " >> Fecha de entrega modificada exitosamente!." << endl;
+                    cout << " >> Fecha de entrega modificada y estado actualizado a TERMINADA!." << endl;
                 }
                 else
                 {
                     cout << " > ERROR: No se pudo guardar la nueva fecha en el archivo." << endl;
+                }
+                system("pause");
+                break;
+            }
+
+            case 4:
+            {
+                cout << "\n--- CAMBIAR ESTADO DE TRABAJO ---" << endl;
+                cout << "1. Sin iniciar" << endl;
+                cout << "2. En proceso" << endl;
+                cout << "3. Terminada" << endl;
+                int nuevoEstado = cargarEntero("Seleccione el nuevo estado: ");
+
+                if(nuevoEstado < 1 || nuevoEstado > 3) {
+                    cout << " > ERROR: Seleccion de estado invalida." << endl;
+                } else {
+                    r.setEstado(nuevoEstado);
+                    if (_repo.actualizar(pos, r)) {
+                        cout << " >> Estado actualizado exitosamente a: " << getNombreEstado(nuevoEstado) << endl;
+                    } else {
+                        cout << " > ERROR: No se pudo guardar el nuevo estado en el disco." << endl;
+                    }
                 }
                 system("pause");
                 break;
@@ -616,6 +683,53 @@ void ReparacionManager::modificacion()
         }
     }
     while (opcion != 0);
+}
+
+string ReparacionManager::getNombreEstado(int estado) {
+    switch(estado) {
+        case 1: return "Sin iniciar";
+        case 2: return "En proceso";
+        case 3: return "Terminada";
+        default: return "Desconocido";
+    }
+}
+
+void ReparacionManager::listarPorEstado() {
+    system("cls");
+    cout << "=== LISTAR REPARACIONES POR ESTADO ===" << endl;
+    cout << "1. Ver reparaciones: SIN INICIAR" << endl;
+    cout << "2. Ver reparaciones: EN PROCESO" << endl;
+    cout << "3. Ver reparaciones: TERMINADAS" << endl;
+    int estadoBuscado = cargarEntero("\nSeleccione el estado que desea filtrar: ");
+
+    if (estadoBuscado < 1 || estadoBuscado > 3) {
+        cout << " > Opcion invalida." << endl;
+        system("pause");
+        return;
+    }
+
+    int cant = _repo.getCantidadRegistros();
+    bool hayRegistros = false;
+
+    system("cls");
+    cout << "=== LISTADO DE REPARACIONES [" << getNombreEstado(estadoBuscado) << "] ===" << endl;
+    cout << "------------------------------------------------------------------------" << endl;
+
+    for (int i = 0; i < cant; i++) {
+        Reparacion r = _repo.leer(i);
+
+        if (!r.getEliminado() && r.getEstado() == estadoBuscado) {
+            mostrar(r);
+            cout << "------------------------------------------------------------------------" << endl;
+            hayRegistros = true;
+        }
+    }
+
+    if (!hayRegistros) {
+        cout << " > No se encontraron reparaciones en estado: " << getNombreEstado(estadoBuscado) << endl;
+    }
+
+    system("pause");
 }
 
 int ReparacionManager::seleccionarReparacion() {
@@ -642,6 +756,7 @@ int ReparacionManager::seleccionarReparacion() {
 }
 
 int ReparacionManager::buscarPorId() {
+    system("cls");
     int nro = cargarEntero("Ingrese el ID (Nro Reparacion) a buscar: ");
 
     int pos = _repo.buscarPorNumero(nro);
@@ -660,6 +775,7 @@ int ReparacionManager::buscarPorId() {
 }
 
 int ReparacionManager::buscarPorCuit() {
+    system("cls");
     string cuitBuscado = cargarCadena("Ingrese el CUIT del cliente: ");
 
     int cant = _repo.getCantidadRegistros();
@@ -695,6 +811,7 @@ int ReparacionManager::buscarPorCuit() {
 }
 
 int ReparacionManager::seleccionarDeUltimasDiez() {
+    system("cls");
     int cant = _repo.getCantidadRegistros();
     if (cant == 0) {
         cout << " > No hay reparaciones registradas en el sistema." << endl;
@@ -734,27 +851,92 @@ int ReparacionManager::seleccionarDeUltimasDiez() {
     return cargarEntero("Ingrese el Nro de Reparacion que desea seleccionar (o -1 para cancelar): ");
 }
 
-void ReparacionManager::listado()
-{
-    cout << "\n=== LISTADO DE REPARACIONES ===\n" << endl;
-    int cantidad = _repo.getCantidadRegistros();
-    if (cantidad == 0)
-    {
-        cout << "No hay reparaciones registradas." << endl;
-        return;
-    }
+bool ReparacionManager::equipoTieneReparacionAbierta(int nroEquipo) {
+    int cantDetalles = _repoDetalle.getCantidadRegistros();
 
-    bool hay = false;
-    for (int i = 0; i < cantidad; i++)
-    {
-        Reparacion r = _repo.leer(i);
-        if (!r.getEliminado())
-        {
-            mostrar(r);
-            hay = true;
+    for (int i = 0; i < cantDetalles; i++) {
+        DetalleReparacion d = _repoDetalle.leer(i);
+
+        if (d.getNroEquipo() == nroEquipo && !d.getEliminado()) {
+
+            int posReparacion = _repo.buscarPorNumero(d.getNroReparacion());
+
+            if (posReparacion != -1) {
+                Reparacion rep = _repo.leer(posReparacion);
+
+                if (rep.getEstado() == 1 || rep.getEstado() == 2) {
+                    return true;
+                }
+            }
         }
     }
-    if (!hay) cout << "No hay reparaciones activas." << endl;
+    return false; //equipo libre para cargar
+}
+
+void ReparacionManager::listado()
+{
+    int opcion;
+    do
+    {
+        system("cls");
+        cout << "=== MENU DE LISTADOS DE REPARACIONES ===" << endl<<endl;
+        cout << "1. Listar TODAS las reparaciones activas" << endl;
+        cout << "2. Listar reparaciones: SIN INICIAR" << endl;
+        cout << "3. Listar reparaciones: EN PROCESO" << endl;
+        cout << "4. Listar reparaciones: TERMINADAS" << endl;
+        cout << "0. Volver al menu anterior" << endl;
+
+        opcion = cargarEntero("\nSeleccione una opcion de listado: ");
+
+        if (opcion == 0) break;
+
+        if (opcion < 1 || opcion > 4)
+        {
+            cout << " > Opcion incorrecta." << endl<<endl;
+            system("pause");
+            continue;
+        }
+
+        int cantidad = _repo.getCantidadRegistros();
+        if (cantidad == 0)
+        {
+            cout << "\nNo hay reparaciones registradas en el sistema." << endl<<endl;
+            system("pause");
+            continue;
+        }
+
+        system("cls");
+
+        if (opcion == 1) {
+            cout << "=== LISTADO DE TODAS LAS REPARACIONES ACTIVAS ===\n" << endl;
+        } else {
+            cout << "=== LISTADO DE REPARACIONES [" << getNombreEstado(opcion - 1) << "] ===\n" << endl;
+        }
+
+        bool hay = false;
+        for (int i = 0; i < cantidad; i++)
+        {
+            Reparacion r = _repo.leer(i);
+            if (!r.getEliminado())
+            {
+
+                if (opcion == 1 || r.getEstado() == (opcion - 1))
+                {
+                    mostrar(r);
+                    hay = true;
+                }
+            }
+        }
+
+        if (!hay)
+        {
+            if (opcion == 1) cout << "No hay reparaciones activas." << endl<<endl;
+            else cout << "No hay reparaciones en estado: " << getNombreEstado(opcion - 1) << endl<<endl;
+        }
+
+        system("pause");
+
+    } while (opcion != 0);
 }
 
 void ReparacionManager::listadoPorFechaEntrega()

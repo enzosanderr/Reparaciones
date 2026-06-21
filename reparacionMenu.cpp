@@ -23,5 +23,5 @@ void ReparacionMenu::ejecutarOpcion(int opcion) {
       case 4: _manager.listado(); break;
       case 0: return;
    }
-   pausar();
+   //pausar();
 }
