@@ -444,7 +444,7 @@ void ReparacionManager::baja()
 {
     cout << "\n=== BAJA DE REPARACION ===" << endl;
 
-    int nro = seleccionarReparacion(1);
+    int nro = seleccionarReparacion(0);
     if (nro <= 0)
     {
         cout << " >> Operacion cancelada." << endl;

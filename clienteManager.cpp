@@ -527,6 +527,10 @@ void ClienteManager::consultaPorCuit()
     {
         cout << "ESTADO: [ACTIVO]" << endl;
     }
+
+
+    mostrarReparacionesActivasPorCliente(cuit);
+    mostrarParqueEquiposPorCliente(cuit);
 }
 
 void ClienteManager::listadoInactivos()
@@ -550,4 +554,72 @@ void ClienteManager::listadoInactivos()
         }
     }
     if (!hayInactivos) cout << "No se encontraron clientes inactivos en el sistema." << endl;
+}
+
+
+void ClienteManager::mostrarReparacionesActivasPorCliente(const string& cuit)
+{
+    cout << "\n>>> REPARACIONES ACTIVAS EN TALLER:" << endl;
+    int cantR = _repoReparacion.getCantidadRegistros();
+    int cantD = _repoDetalle.getCantidadRegistros();
+    bool tieneReparaciones = false;
+
+    for (int i = 0; i < cantR; i++)
+    {
+        Reparacion r = _repoReparacion.leer(i);
+
+        if (!r.getEliminado() && r.getCuit() == cuit && (r.getEstado() == 1 || r.getEstado() == 2))
+        {
+            tieneReparaciones = true;
+            cout << "\n  [*] Orden #" << r.getNroReparacion()
+                 << " | Ingreso: " << r.getFechaIngreso().toString()
+                 << " | Tecnico: " << r.getLegajo() << endl;
+
+            cout << "      Trabajos en esta orden:" << endl;
+            for (int j = 0; j < cantD; j++)
+            {
+                DetalleReparacion d = _repoDetalle.leer(j);
+
+                if (!d.getEliminado() && d.getNroReparacion() == r.getNroReparacion())
+                {
+                    int posEq = _repoEquipo.buscarPorNumero(d.getNroEquipo());
+                    if (posEq != -1)
+                    {
+                        Equipo e = _repoEquipo.leer(posEq);
+                        cout << "      - [" << e.getTipoEquipoString() << "] " << e.getMarca() << endl;
+                    }
+                    cout << "        Detalle de tarea: " << d.getDetalleFalla() << endl;
+                    cout << "        Importe:   $" << d.getImporte() << endl;
+                }
+            }
+        }
+    }
+    if (!tieneReparaciones)
+    {
+        cout << "  (El cliente no tiene ninguna orden de trabajo en proceso en este momento)" << endl;
+    }
+}
+
+void ClienteManager::mostrarParqueEquiposPorCliente(const string& cuit)
+{
+    cout << "\n----------------------------------------------------------------------------------" << endl;
+    cout << ">>> EQUIPOS DEL CLIENTE REGISTRADOS EN EL SISTEMA:" << endl<<endl;
+    int cantE = _repoEquipo.getCantidadRegistros();
+    bool tieneEquipos = false;
+
+    for (int i = 0; i < cantE; i++)
+    {
+        Equipo e = _repoEquipo.leer(i);
+        if (!e.getEliminado() && e.getCuit() == cuit)
+        {
+            cout << "  - #" << e.getNroEquipo() << " [" << e.getTipoEquipoString() << "] "
+                 << e.getMarca() << " (Obs: " << e.getDescripcion() << ")" << endl;
+            tieneEquipos = true;
+        }
+    }
+    if (!tieneEquipos)
+    {
+        cout << "  (Este cliente no tiene ningun equipo registrado en el sistema)" << endl;
+    }
+    cout << "\n----------------------------------------------------------------------------------" << endl;
 }

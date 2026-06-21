@@ -1,5 +1,8 @@
 #pragma once
 #include "clienteArchivo.h"
+#include "reparacionArchivo.h"
+#include "detalleReparacionArchivo.h"
+#include "equipoArchivo.h"
 
 class ClienteManager
 {
@@ -21,6 +24,11 @@ private:
     void mostrar(const Cliente &c);
     bool cuitUnico(const std::string &cuit);
     std::string seleccionarCliente();
+    void mostrarReparacionesActivasPorCliente(const std::string& cuit);
+    void mostrarParqueEquiposPorCliente(const std::string& cuit);
 
     ClienteArchivo _repo;
+    ReparacionArchivo _repoReparacion;
+    DetalleReparacionArchivo _repoDetalle;
+    EquipoArchivo _repoEquipo;
 };
