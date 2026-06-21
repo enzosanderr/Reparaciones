@@ -25,7 +25,7 @@ private:
     void mostrarEquiposDeCliente(const std::string &cuit);
     int cargarDetalles(int nroReparacion, const std::string &cuit);
     float pedirImporte();
-    void agregarDetalle(int nroReparacion, int nroEquipo, float importe);
+    void agregarDetalle(int nroReparacion, int nroEquipo, float importe, const char* falla);
     bool detalleYaCargado(int nroReparacion, int nroEquipo);
     bool equipoPerteneceACliente(int nroEquipo, const std::string &cuit);
     void modificarDetalles(const Reparacion &r);
@@ -36,7 +36,6 @@ private:
     int buscarPorCuit();
     int seleccionarDeUltimasDiez();
     bool equipoTieneReparacionAbierta(int nroEquipo);
-    void limpiarDetallesHuerfanos(int nroReparacion);
 
     ReparacionArchivo _repo;
     DetalleReparacionArchivo _repoDetalle;

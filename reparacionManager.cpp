@@ -84,9 +84,9 @@ float ReparacionManager::pedirImporte()
     return importe;
 }
 
-void ReparacionManager::agregarDetalle(int nroReparacion, int nroEquipo, float importe)
+void ReparacionManager::agregarDetalle(int nroReparacion, int nroEquipo, float importe, const char* falla)
 {
-    DetalleReparacion d(nroReparacion, nroEquipo, importe);
+    DetalleReparacion d(nroReparacion, nroEquipo, importe,falla);
     _repoDetalle.crear(d);
 }
 
@@ -151,6 +151,8 @@ void ReparacionManager::mostrar(const Reparacion &r)
                 cout << " (" << eq.getTipoEquipoString() << " - " << eq.getDescripcion() << ")";
             }
             cout << " - Importe: $" << d.getImporte() << endl;
+            cout << "    Falla/Trabajo: " << d.getDetalleFalla() << endl << endl;
+
             total += d.getImporte();
             hay = true;
         }
@@ -183,7 +185,6 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
                 int confirmar = cargarEntero("No ha cargado equipos. ¨Desea CANCELAR la carga? (1=Si, 0=No): ");
                 if (confirmar == 1)
                 {
-                    limpiarDetallesHuerfanos(nroReparacion);
                     return -1;
                 }
                 else
@@ -194,14 +195,11 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
             break;
         }
 
-        //validaciones
         int posEquipo = _repoEquipo.buscarPorNumero(nroEquipo);
+
 
         if (posEquipo == -1)
         {
-
-
-
             cout << "\n > El equipo #" << nroEquipo << " no esta registrado en el sistema." << endl;
             int opcion = cargarEntero("\nDesea dar de alta un NUEVO equipo para este cliente ahora mismo? (1=Si, 0=No): ");
             if (opcion == 1)
@@ -247,7 +245,10 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
 
 
         float importe = pedirImporte();
-        agregarDetalle(nroReparacion, nroEquipo, importe);
+
+       string falla = cargarTexto("Describa la falla o trabajo a realizar: ", 99);
+
+        agregarDetalle(nroReparacion, nroEquipo, importe, falla.c_str());
         cargados++;
         cout << " >> Equipo #" << nroEquipo << " agregado correctamente al detalle." << endl;
     }
@@ -355,9 +356,10 @@ void ReparacionManager::alta()
     //carga de detalles
     int cargados = cargarDetalles(nro, cuit);
 
-    if (cargados == -1) //usuario cancelo
+    if (cargados == -1) // Usuario decidi¢ cancelar
     {
         cout << "\n>>> Alta cancelada por el usuario. No se guardo ninguna reparacion." << endl;
+        system("pause");
         return;
     }
 
@@ -372,15 +374,7 @@ void ReparacionManager::alta()
         bool fechaValida = false;
         do
         {
-            fe = cargarFecha("Ingrese la fecha estimada de entrega (Ingrese a¤o 0 para cancelar la operacion):");
-
-            if (fe.getAnio() == 0)
-            {
-                 //cancelo al final
-                 limpiarDetallesHuerfanos(nro);
-                 cout << "\n>>> Alta cancelada por el usuario." << endl;
-                 return;
-            }
+            fe = cargarFecha("Fecha estimada de entrega:");
 
             if (!fe.esValida())
             {
@@ -400,9 +394,8 @@ void ReparacionManager::alta()
         while (!fechaValida);
 
 
-        //carga
         Reparacion r(nro, cuit, legajo,fechaActual, fe);
-
+        //r.setFechaIngreso(fechaActual);
         if (_repo.crear(r))
         {
             cout << "\n>>> EXITO: La Reparacion #" << nro << " se ha guardado en disco con "
@@ -410,7 +403,6 @@ void ReparacionManager::alta()
         }
         else
         {
-            limpiarDetallesHuerfanos(nro);
             cout << "\n>>> ERROR CRITICO: No se pudo escribir en el archivo reparaciones" << endl;
         }
     }
@@ -504,6 +496,7 @@ void ReparacionManager::modificarDetalles(const Reparacion &r)
         cout << "2. Modificar importe de un equipo" << endl;
         cout << "3. Quitar equipo del detalle" << endl;
         cout << "4. Ver detalles actuales" << endl;
+        cout << "5. Editar descripci¢n de falla de un equipo" << endl;
         cout << "0. Terminar modificacion de detalles" << endl;
         opcion = cargarEntero("Seleccione una opcion: ");
 
@@ -528,7 +521,10 @@ void ReparacionManager::modificarDetalles(const Reparacion &r)
                 continue;
             }
             float importe = pedirImporte();
-            agregarDetalle(r.getNroReparacion(), nroEquipo, importe);
+
+            string falla = cargarTexto("Describa la falla o trabajo a realizar: ", 99);
+
+            agregarDetalle(r.getNroReparacion(), nroEquipo, importe, falla.c_str());
             cout << "Equipo agregado." << endl;
         }
         else if (opcion == 2)
@@ -569,13 +565,51 @@ void ReparacionManager::modificarDetalles(const Reparacion &r)
         {
             mostrar(r);
         }
+        else if (opcion == 5)
+        {
+            int nroEquipo = cargarEntero("\nNumero de equipo cuya falla desea modificar: ");
+
+            // Buscamos la posici¢n f¡sica del registro en el archivo de detalles
+            int posDetalle = _repoDetalle.buscarDetalle(r.getNroReparacion(), nroEquipo);
+
+            if (posDetalle == -1)
+            {
+                cout << " > ERROR: Ese equipo no esta asignado al detalle de esta orden." << endl;
+                system("pause");
+                continue;
+            }
+
+            // Leemos el detalle actual desde el disco
+            DetalleReparacion d = _repoDetalle.leer(posDetalle);
+
+            // Mostramos la falla que tiene escrita actualmente
+            cout << "Falla actual: " << d.getDetalleFalla() << endl<<endl;
+
+            // Cargamos el nuevo texto
+            string nuevaFalla = cargarTexto("Ingrese la nueva descripcion de la falla: ", 99);
+
+            // Modificamos el objeto en memoria usando el setter que corregimos con strcpy
+            d.setDetalleFalla(nuevaFalla.c_str());
+
+            // Grabamos el registro actualizado de vuelta en la misma posici¢n del archivo .dat
+            if (_repoDetalle.actualizar(posDetalle, d))
+            {
+                cout << " >>\n Exito: Descripcion de falla modificada en el disco." << endl;
+            }
+            else
+            {
+                cout << " > \nERROR: No se pudo actualizar el archivo de detalles." << endl;
+            }
+            system("pause");
+        }
     }
+
     while (opcion != 0);
-}
+    }
 
 void ReparacionManager::modificacion()
 {
-    cout << "\n=== MODIFICACION DE REPARACION ===" << endl;
+    cout << "\n===  MODIFICACION DE REPARACION ===" << endl;
 
     int nro = seleccionarReparacion();
 
@@ -609,6 +643,7 @@ void ReparacionManager::modificacion()
         cout << "2. Modificar Legajo Empleado (Actual:   " << r.getLegajo() << " )" << endl;
         cout << "3. Modificar Fecha de Entrega (Actual:   " << r.getFechaEntrega().toString() << " )" << endl;
         cout << "4. Cambiar Estado de la Reparacion (Actual: " << getNombreEstado(r.getEstado()) << " )" << endl;
+        cout << "5. Modificar Equipos/Importes del Detalle" << endl;
         cout << "0. Volver al menu anterior" << endl;
 
         opcion = cargarEntero("\nSeleccione una opcion: ");
@@ -664,6 +699,8 @@ void ReparacionManager::modificacion()
             system("pause");
             break;
         }
+
+        case 3:
         {
             Fecha nuevaFecha;
             bool fechaValida = false;
@@ -688,6 +725,7 @@ void ReparacionManager::modificacion()
                 }
             }
             while (!fechaValida);
+
 
             r.setFechaEntrega(nuevaFecha);
             r.setEstado(3);
@@ -732,6 +770,9 @@ void ReparacionManager::modificacion()
             break;
         }
 
+        case 5:
+            modificarDetalles(r);
+            r = _repo.leer(pos);
         case 0:
             break;
 
@@ -1080,20 +1121,4 @@ void ReparacionManager::listadoPorFechaEntrega()
     if (!hay) cout << "No hay reparaciones activas." << endl;
 
     delete[] v;
-}
-
-
-void ReparacionManager::limpiarDetallesHuerfanos(int nroReparacion)
-{
-    int cantD = _repoDetalle.getCantidadRegistros();
-    for (int i = 0; i < cantD; i++)
-    {
-        DetalleReparacion d = _repoDetalle.leer(i);
-
-        if (d.getNroReparacion() == nroReparacion && !d.getEliminado())
-        {
-            d.setEliminado(true);
-            _repoDetalle.actualizar(i, d);
-        }
-    }
 }

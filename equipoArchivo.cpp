@@ -70,3 +70,23 @@ int EquipoArchivo::buscarPorNumero(int nroEquipo) {
    fclose(pFile);
    return result;
 }
+
+int EquipoArchivo::getNuevoId() {
+
+    FILE *pFile = fopen(_nombreArchivo.c_str(), "rb");
+
+    if (pFile == nullptr) return 1;
+
+    Equipo reg;
+    int maxNro = 0;
+
+    while (fread(&reg, sizeof(Equipo), 1, pFile)) {
+        if (reg.getNroEquipo() > maxNro) {
+            maxNro = reg.getNroEquipo();
+        }
+    }
+
+    fclose(pFile);
+
+    return maxNro + 1;
+}

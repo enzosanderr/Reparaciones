@@ -14,6 +14,7 @@ public:
 
    int getCantidadRegistros();
    int buscarPorNumero(int nroEquipo);
+   int getNuevoId();
 
 private:
    std::string _nombreArchivo;

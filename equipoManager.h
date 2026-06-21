@@ -13,7 +13,7 @@ public:
    void listadoPorFechaIngreso();
 
 private:
-   void cargarCamposEditables(Equipo &e);
+   bool cargarCamposEditables(Equipo &e);
    void mostrar(const Equipo &e);
    bool nroEquipoUnico(int nro);
    bool clienteExiste(const std::string &cuit);
