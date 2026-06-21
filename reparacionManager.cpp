@@ -278,7 +278,8 @@ int ReparacionManager::cargarDetalles(int nroReparacion, const string &cuit)
 
         agregarDetalle(nroReparacion, nroEquipo, importe, falla.c_str());
         cargados++;
-        cout << " >> Equipo #" << nroEquipo << " agregado correctamente al detalle." << endl;
+        cout << " >> Equipo #" << nroEquipo << " agregado correctamente al detalle." << endl<<endl;
+        system("pause");
     }
 
     return cargados;
@@ -403,9 +404,23 @@ void ReparacionManager::alta()
         }
         while (!fechaValida);
 
+        //estado inicial de la reparacion
+        int estadoInicial = 1;
+
+        cout << "\n=== FLUJO DE TRABAJO ===" << endl;
+        int iniciarYa = cargarEntero("¨Va a comenzar a trabajar en esta reparacion ahora mismo? (1=Si, 0=No): ");
+
+        if (iniciarYa == 1)
+        {
+            estadoInicial = 2;
+            cout << " >> La orden se registrara directamente 'En proceso'." << endl;
+        }
+
+
 
         Reparacion r(nro, cuit, legajo,fechaActual, fe);
-        //r.setFechaIngreso(fechaActual);
+        r.setEstado(estadoInicial);
+
         if (_repo.crear(r))
         {
             cout << "\n>>> EXITO: La Reparacion #" << nro << " se ha guardado en disco con "
@@ -609,7 +624,6 @@ void ReparacionManager::modificarDetalles(const Reparacion &r)
         {
             int nroEquipo = cargarEntero("\nNumero de equipo cuya falla desea modificar: ");
 
-            // Buscamos la posici¢n f¡sica del registro en el archivo de detalles
             int posDetalle = _repoDetalle.buscarDetalle(r.getNroReparacion(), nroEquipo);
 
             if (posDetalle == -1)
@@ -619,19 +633,14 @@ void ReparacionManager::modificarDetalles(const Reparacion &r)
                 continue;
             }
 
-            // Leemos el detalle actual desde el disco
             DetalleReparacion d = _repoDetalle.leer(posDetalle);
 
-            // Mostramos la falla que tiene escrita actualmente
             cout << "Falla actual: " << d.getDetalleFalla() << endl<<endl;
 
-            // Cargamos el nuevo texto
             string nuevaFalla = cargarTexto("Ingrese la nueva descripcion de la falla: ", 99);
 
-            // Modificamos el objeto en memoria usando el setter que corregimos con strcpy
             d.setDetalleFalla(nuevaFalla.c_str());
 
-            // Grabamos el registro actualizado de vuelta en la misma posici¢n del archivo .dat
             if (_repoDetalle.actualizar(posDetalle, d))
             {
                 cout << " >>\n Exito: Descripcion de falla modificada en el disco." << endl;
@@ -996,7 +1005,7 @@ int ReparacionManager::buscarPorCuit(int filtroEstado)
         }
 
 
-system("cls");
+        system("cls");
         cout << "=== REPARACIONES ENCONTRADAS PARA EL CUIT: " << cuit << " ===" << endl;
         cout << "----------------------------------------------------------------------" << endl;
 
