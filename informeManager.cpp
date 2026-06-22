@@ -110,12 +110,14 @@ void InformeManager::recaudacionPorPeriodo()
 
             long f = r.getFechaEntrega().aNumero();
             if (r.getFechaEntrega().getAnio() == y && r.getFechaEntrega().getMes() == m &&
-                f >= desde.aNumero() && f <= hasta.aNumero())
+                    f >= desde.aNumero() && f <= hasta.aNumero())
             {
                 //calculo
                 float totalRep = 0;
-                for (int d = 0; d < cantD; d++) {
-                    if (!vDetalles[d].getEliminado() && vDetalles[d].getNroReparacion() == r.getNroReparacion()) {
+                for (int d = 0; d < cantD; d++)
+                {
+                    if (!vDetalles[d].getEliminado() && vDetalles[d].getNroReparacion() == r.getNroReparacion())
+                    {
                         totalRep += vDetalles[d].getImporte();
                     }
                 }
@@ -213,11 +215,13 @@ void InformeManager::recaudacionPorCliente()
 
             //calculo
             if (!r.getEliminado() && r.getEstado() == 3 && r.getCuit() == c.getCuit() &&
-                f >= desde.aNumero() && f <= hasta.aNumero())
+                    f >= desde.aNumero() && f <= hasta.aNumero())
             {
                 float totalRep = 0;
-                for (int d = 0; d < cantD; d++) {
-                    if (!vDetalles[d].getEliminado() && vDetalles[d].getNroReparacion() == r.getNroReparacion()) {
+                for (int d = 0; d < cantD; d++)
+                {
+                    if (!vDetalles[d].getEliminado() && vDetalles[d].getNroReparacion() == r.getNroReparacion())
+                    {
                         totalRep += vDetalles[d].getImporte();
                     }
                 }
@@ -300,8 +304,13 @@ void InformeManager::reparacionesPorTipoEquipo()
 
         //busqueda de reparacion
         int posR = -1;
-        for (int k = 0; k < cantR; k++) {
-            if (vReparaciones[k].getNroReparacion() == d.getNroReparacion()) { posR = k; break; }
+        for (int k = 0; k < cantR; k++)
+        {
+            if (vReparaciones[k].getNroReparacion() == d.getNroReparacion())
+            {
+                posR = k;
+                break;
+            }
         }
         if (posR == -1) continue;
 
@@ -314,8 +323,13 @@ void InformeManager::reparacionesPorTipoEquipo()
 
         //busqueda de equipo
         int posE = -1;
-        for (int k = 0; k < cantE; k++) {
-            if (vEquipos[k].getNroEquipo() == d.getNroEquipo()) { posE = k; break; }
+        for (int k = 0; k < cantE; k++)
+        {
+            if (vEquipos[k].getNroEquipo() == d.getNroEquipo())
+            {
+                posE = k;
+                break;
+            }
         }
         if (posE == -1) continue;
 
@@ -416,12 +430,14 @@ void InformeManager::productividadEmpleados()
 
             //calculo
             if (!r.getEliminado() && r.getEstado() == 3 && r.getLegajo() == e.getLegajo() &&
-                f >= desde.aNumero() && f <= hasta.aNumero())
+                    f >= desde.aNumero() && f <= hasta.aNumero())
             {
                 reps++;
                 float totalRep = 0;
-                for (int d = 0; d < cantD; d++) {
-                    if (!vDetalles[d].getEliminado() && vDetalles[d].getNroReparacion() == r.getNroReparacion()) {
+                for (int d = 0; d < cantD; d++)
+                {
+                    if (!vDetalles[d].getEliminado() && vDetalles[d].getNroReparacion() == r.getNroReparacion())
+                    {
                         totalRep += vDetalles[d].getImporte();
                     }
                 }
@@ -444,7 +460,8 @@ void InformeManager::productividadEmpleados()
 
 void InformeManager::equiposReincidentes()
 {
-    cout << "\n=== INFORME: EQUIPOS REINCIDENTES ===" << endl;
+    cout << "\n=== INFORME: EQUIPOS REINCIDENTES ===" << endl<< endl;
+
     Fecha desde, hasta;
     if (!pedirRangoFechas(desde, hasta)) return;
 
@@ -453,27 +470,24 @@ void InformeManager::equiposReincidentes()
     int cantR = _repoReparacion.getCantidadRegistros();
     int cantEmp = _repoEmpleado.getCantidadRegistros();
 
-    if (cantE == 0 || cantD == 0 || cantR == 0) return;
+    if (cantE == 0 || cantD == 0 || cantR == 0 || cantEmp == 0) return;
 
-    //carga
+    //carga en ram
     Equipo* vEquipos = new Equipo[cantE];
-    if (vEquipos == nullptr) {
-        cout << " > ERROR CRITICO: Sin memoria para Equipos." << endl;
-        return;
-    }
+    if (vEquipos == nullptr) return;
     _repoEquipo.leerTodos(vEquipos, cantE);
 
     DetalleReparacion* vDetalles = new DetalleReparacion[cantD];
-    if (vDetalles == nullptr) {
-        cout << " > ERROR CRITICO: Sin memoria para Detalles." << endl;
+    if (vDetalles == nullptr)
+    {
         delete[] vEquipos;
         return;
     }
     _repoDetalle.leerTodos(vDetalles, cantD);
 
     Reparacion* vReparaciones = new Reparacion[cantR];
-    if (vReparaciones == nullptr) {
-        cout << " > ERROR CRITICO: Sin memoria para Reparaciones." << endl;
+    if (vReparaciones == nullptr)
+    {
         delete[] vEquipos;
         delete[] vDetalles;
         return;
@@ -481,8 +495,8 @@ void InformeManager::equiposReincidentes()
     _repoReparacion.leerTodos(vReparaciones, cantR);
 
     Empleado* vEmpleados = new Empleado[cantEmp];
-    if (vEmpleados == nullptr) {
-        cout << " > ERROR CRITICO: Sin memoria para Empleados." << endl;
+    if (vEmpleados == nullptr)
+    {
         delete[] vEquipos;
         delete[] vDetalles;
         delete[] vReparaciones;
@@ -494,57 +508,109 @@ void InformeManager::equiposReincidentes()
     cout << "\nEQUIPOS REINCIDENTES ENTRE " << desde.toString() << " Y " << hasta.toString() << endl;
     cout << "==================================================================" << endl << endl;
 
+    //id maximo de equipo
+    int maxIdEquipo = _repoEquipo.getNuevoId();
+
+    //vector anotador de equipos
+    int* conteoReincidencias = new int[maxIdEquipo]();
+    if (conteoReincidencias == nullptr)
+    {
+        delete[] vEquipos;
+        delete[] vDetalles;
+        delete[] vReparaciones;
+        delete[] vEmpleados;
+        return;
+    }
+
+    //id maximo de reparaciones
+    int maxIdReparacion = _repoReparacion.getNuevoId();
+
+    //vector de booleanos de reps
+    bool* reparacionesValidas = new bool[maxIdReparacion]();
+    if (reparacionesValidas == nullptr)
+    {
+        delete[] vEquipos;
+        delete[] vDetalles;
+        delete[] vReparaciones;
+        delete[] vEmpleados;
+        delete[] conteoReincidencias;
+        return;
+    }
+
+    //reparacion terminada y en rango de fecha se marca como true
+    for (int i = 0; i < cantR; i++)
+    {
+        Reparacion r = vReparaciones[i];
+        if (!r.getEliminado() && r.getEstado() == 3
+            && r.getFechaEntrega().aNumero() >= desde.aNumero()
+            && r.getFechaEntrega().aNumero() <= hasta.aNumero())
+        {
+            reparacionesValidas[r.getNroReparacion()] = true;
+        }
+    }
+
+    for (int i = 0; i < cantD; i++)
+    {
+        DetalleReparacion d = vDetalles[i];
+        if (!d.getEliminado())
+        {
+            //el detalle pertenece a la rep marcada como true
+            if (reparacionesValidas[d.getNroReparacion()]){
+                    conteoReincidencias[d.getNroEquipo()]++;
+                    }
+        }
+    }
+
+
     bool hayReincidentes = false;
 
+    //recorrida de equipo verificando el anotador
     for (int i = 0; i < cantE; i++)
     {
         Equipo e = vEquipos[i];
 
-        int cantidad = 0;
-        ostringstream detalles;
-
-        //calculo
-        for (int j = 0; j < cantD; j++)
-        {
-            DetalleReparacion d = vDetalles[j];
-            if (d.getEliminado() || d.getNroEquipo() != e.getNroEquipo()) continue;
-
-            int posR = -1;
-            for (int k = 0; k < cantR; k++) {
-                if (vReparaciones[k].getNroReparacion() == d.getNroReparacion()) { posR = k; break; }
-            }
-            if (posR == -1) continue;
-
-            Reparacion r = vReparaciones[posR];
-
-            if (r.getEliminado() || r.getEstado() != 3) continue;
-
-            long f = r.getFechaEntrega().aNumero();
-            if (f < desde.aNumero() || f > hasta.aNumero()) continue;
-
-            //empleado
-            string nombreTecnico = "Desconocido";
-            for (int k = 0; k < cantEmp; k++) {
-                if (vEmpleados[k].getLegajo() == r.getLegajo()) {
-                    nombreTecnico = vEmpleados[k].getNombre() + " " + vEmpleados[k].getApellido();
-                    break;
-                }
-            }
-
-            cantidad++;
-            detalles << "    Reparacion #" << r.getNroReparacion()
-                     << " - Fecha: " << r.getFechaEntrega().toString()
-                     << " - Tecnico: " << nombreTecnico
-                     << " - Importe: $" << fixed << setprecision(2) << d.getImporte() << "\n";
-        }
-
-        if (cantidad >= 2)
+        //tiene 2 o mas ingresos
+        if (!e.getEliminado() && conteoReincidencias[e.getNroEquipo()] >= 2)
         {
             cout << "Equipo #" << e.getNroEquipo() << " - " << e.getTipoEquipoString()
                  << " - " << e.getMarca() << " - " << e.getDescripcion() << endl << endl;
             cout << "  Cliente - CUIT: " << e.getCuit() << endl << endl;
-            cout << "  Cantidad de reparaciones finalizadas:   " << cantidad << endl;
-            cout << detalles.str();
+            cout << "  Cantidad de reparaciones finalizadas:    " << conteoReincidencias[e.getNroEquipo()] << endl;
+
+            //es reincidente asi que le buscamos sus detalles y luego la fecha y el tecnico
+            for (int j = 0; j < cantD; j++)
+            {
+                DetalleReparacion d = vDetalles[j];
+
+                if (!d.getEliminado() && d.getNroEquipo() == e.getNroEquipo() && reparacionesValidas[d.getNroReparacion()])
+                {
+
+                    //fecha y tecnico
+                    for (int k = 0; k < cantR; k++)
+                    {
+                        if (vReparaciones[k].getNroReparacion() == d.getNroReparacion())
+                        {
+                            Reparacion r = vReparaciones[k];
+
+                            string nombreTecnico = "Desconocido";
+                            for (int e = 0; e < cantEmp; e++)
+                            {
+                                if (vEmpleados[e].getLegajo() == r.getLegajo())
+                                {
+                                    nombreTecnico = vEmpleados[e].getNombre() + " " + vEmpleados[e].getApellido();
+                                    break;
+                                }
+                            }
+
+                            cout << "    Reparacion #" << r.getNroReparacion()
+                                 << " - Fecha: " << r.getFechaEntrega().toString()
+                                 << " - Tecnico: " << nombreTecnico
+                                 << " - Importe: $" << fixed << setprecision(2) << d.getImporte() << "\n";
+                            break;
+                        }
+                    }
+                }
+            }
             cout << "\n-----------------------------------------------------------------------------------------------" << endl;
             hayReincidentes = true;
         }
@@ -556,4 +622,6 @@ void InformeManager::equiposReincidentes()
     delete[] vDetalles;
     delete[] vReparaciones;
     delete[] vEmpleados;
+    delete[] conteoReincidencias;
+    delete[] reparacionesValidas;
 }
