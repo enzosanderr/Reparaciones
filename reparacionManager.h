@@ -41,6 +41,7 @@ private:
     int seleccionarReparacion(int filtroEstado = 0);
     int buscarPorCuit(int filtroEstado = 0);
     std::string asignarTecnico();
+    void listarEquiposDeLaReparacion(int nroReparacion);
 
     ReparacionArchivo _repo;
     DetalleReparacionArchivo _repoDetalle;

@@ -19,7 +19,7 @@ public:
    long aNumero() const;
    std::string toString() const;
 
-    void setFechaActual(); // Método para cargar la fecha actual del sistema
+    void setFechaActual();
 
 private:
    int _dia;

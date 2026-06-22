@@ -4,6 +4,7 @@
 #include "clienteManager.h"
 #include "reparacionArchivo.h"
 #include "detalleReparacionArchivo.h"
+#include "equipoArchivo.h"
 
 using namespace std;
 
@@ -24,26 +25,56 @@ bool EquipoManager::cargarCamposEditables(Equipo &e)
     string cuit;
     bool existe = false;
     ClienteManager mgrCliente;
+    ClienteArchivo repoCli;
 
     do
     {
         cuit = cargarTexto("CUIT del cliente propietario (o '0' para volver): ", 14);
-        if (cuit == "0")
+        if (cuit == "0") return false;
+
+        int pos = repoCli.buscarPorCuit(cuit);
+
+        if (pos != -1) // ESTADOS 1 y 2: El cliente ESTÁ en el disco
         {
-            return false;
+            Cliente c = repoCli.leer(pos);
+
+            if (c.getEliminado()) // ESTADO 2: Está en el disco, pero inactivo
+            {
+                cout << "\n > AVISO: El cliente CUIT " << cuit << " se encuentra dado de baja (Inactivo)." << endl;
+                int opcion = cargarEntero("   Desea RESTAURAR este cliente para asignarle el equipo? (1=Si, 0=No): ");
+
+                if (opcion == 1)
+                {
+                    c.setEliminado(false);
+                    if (repoCli.actualizar(pos, c))
+                    {
+                        cout << "   >> Cliente reactivado exitosamente.\n" << endl;
+                        existe = true;
+                    }
+                    else
+                    {
+                        cout << "   > ERROR: No se pudo reactivar al cliente en el disco." << endl;
+                    }
+                }
+                else
+                {
+                    cout << "   >> No se puede continuar sin un titular activo.\n" << endl;
+                }
+            }
+            else // ESTADO 1: Está en el disco y está activo
+            {
+                existe = true;
+            }
         }
-
-        existe = clienteExiste(cuit);
-
-        if (!existe)
+        else // ESTADO 3: No existe en el disco (pos == -1)
         {
             cout << "\n > El cliente con CUIT " << cuit << " no esta registrado en el sistema." << endl;
-            int opcion = cargarEntero("�Desea dar de alta un NUEVO cliente ahora mismo? (1=Si, 0=No): ");
+            int opcion = cargarEntero("Desea dar de alta un NUEVO cliente ahora mismo? (1=Si, 0=No): ");
 
             if (opcion == 1)
             {
                 mgrCliente.alta();
-                cout << "\nPor favor, reingrese el CUIT del cliente recien creado para verificarlo." << endl;
+                cout << "\nPor favor, reingrese el CUIT del cliente recien creado para verificarlo.\n" << endl;
             }
             else
             {
@@ -54,9 +85,8 @@ bool EquipoManager::cargarCamposEditables(Equipo &e)
     while (!existe);
 
     e.setCuit(cuit);
-
-    e.setDescripcion(cargarTexto("Descripcion del Equipo: ", 49));
     e.setMarca(cargarTexto("Marca y modelo: ", 29));
+    e.setDescripcion(cargarTexto("Descripcion del Equipo: ", 49));
 
     int tipo;
     do
@@ -66,8 +96,6 @@ bool EquipoManager::cargarCamposEditables(Equipo &e)
     }
     while (tipo < 1 || tipo > 5);
     e.setTipoEquipo(tipo);
-
-    //fecha con validaciones
 
     Fecha fe;
     Fecha fechaActual;
@@ -82,10 +110,10 @@ bool EquipoManager::cargarCamposEditables(Equipo &e)
         {
             cout << " > ERROR: La fecha ingresada es invalida a nivel calendario." << endl;
         }
-        //validacion fecha futura
+
         else if (fe.aNumero() > fechaActual.aNumero())
         {
-            cout << " > ERROR LOGICO: La fecha de ingreso no puede ser en el futuro." << endl;
+            cout << " > ERROR: La fecha de ingreso no puede ser en el futuro." << endl;
             cout << "   La fecha del sistema de hoy es: " << fechaActual.toString() << endl;
         }
         else
@@ -198,7 +226,7 @@ void EquipoManager::baja()
     mostrar(e);
     cout << "--------------------------------------------------" << endl;
 
-    int confirmar = cargarEntero("�Confirma la baja de este equipo? (1=Si, 0=No): ");
+    int confirmar = cargarEntero("┬┐Confirma la baja de este equipo? (1=Si, 0=No): ");
     if (confirmar != 1)
     {
         cout << " >> Operacion cancelada." << endl;
@@ -230,6 +258,24 @@ void EquipoManager::modificacion()
 
     Equipo e = _repo.leer(pos);
 
+    // ≡ƒƒó ESCUDO: No modificar equipos dados de baja
+    if (e.getEliminado())
+    {
+        cout << " > ERROR: No se puede modificar un equipo que ha sido dado de baja." << endl;
+        system("pause");
+        return;
+    }
+
+    string nombrePropietario = "(Cliente no encontrado)";
+    ClienteArchivo repoCliente;
+    int posC = repoCliente.buscarPorCuit(e.getCuit());
+    if (posC != -1)
+    {
+        Cliente cli = repoCliente.leer(posC);
+        nombrePropietario = cli.getNombre() + " " + cli.getApellido();
+    }
+
+
     int opcion;
     do
     {
@@ -237,11 +283,12 @@ void EquipoManager::modificacion()
         cout << "=== MODIFICAR EQUIPO #" << e.getNroEquipo() << " ===" << endl;
         mostrar(e);
         cout << "--------------------------------------------------" << endl;
-        cout << "1. Modificar CUIT Cliente" << endl;
-        cout << "2. Modificar Descripcion" << endl;
-        cout << "3. Modificar Marca y Modelo" << endl;
-        cout << "4. Modificar Tipo de Equipo" << endl;
-        cout << "5. Modificar Fecha de Ingreso" << endl;
+        cout << "Propietario (No modificable): " << e.getCuit() << " - " << nombrePropietario << endl;
+        cout << "--------------------------------------------------" << endl;
+        cout << "1. Modificar Descripcion" << endl;
+        cout << "2. Modificar Marca y Modelo" << endl;
+        cout << "3. Modificar Tipo de Equipo" << endl;
+        cout << "4. Modificar Fecha de Ingreso" << endl;
         cout << "0. Volver al menu anterior" << endl;
 
         opcion = cargarEntero("\nSeleccione una opcion a modificar: ");
@@ -250,29 +297,13 @@ void EquipoManager::modificacion()
         {
         case 1:
         {
-            string nuevoCuit = cargarTexto("Ingrese el nuevo CUIT: ", 14);
-            if (_repoCliente.buscarPorCuit(nuevoCuit) == -1)
-            {
-                cout << " > ERROR: El cliente no existe o esta dado de baja." << endl;
-            }
-            else
-            {
-                e.setCuit(nuevoCuit);
-                if (_repo.actualizar(pos, e)) cout << " >> CUIT modificado exitosamente." << endl;
-                else cout << " > ERROR: No se pudo actualizar en el disco." << endl;
-            }
-            system("pause");
-            break;
-        }
-        case 2:
-        {
             string nuevaDesc = cargarTexto("Nueva descripcion: ", 49);
             e.setDescripcion(nuevaDesc);
             if (_repo.actualizar(pos, e)) cout << " >> Descripcion modificada." << endl;
             system("pause");
             break;
         }
-        case 3:
+        case 2:
         {
             string nuevaMarca = cargarTexto("Nueva marca y modelo: ", 29);
             e.setMarca(nuevaMarca);
@@ -280,7 +311,7 @@ void EquipoManager::modificacion()
             system("pause");
             break;
         }
-        case 4:
+        case 3:
         {
             int nuevoTipo;
             do
@@ -295,23 +326,36 @@ void EquipoManager::modificacion()
             system("pause");
             break;
         }
-        case 5:
+        case 4:
         {
             Fecha nuevaFecha;
             Fecha hoy;
             hoy.setFechaActual();
             bool fechaOk = false;
+
             do
             {
                 nuevaFecha = cargarFecha("Nueva fecha de ingreso:");
-                if (!nuevaFecha.esValida()) cout << " > Fecha invalida." << endl;
-                else if (nuevaFecha.aNumero() > hoy.aNumero()) cout << " > No puede ser fecha futura." << endl;
-                else fechaOk = true;
+
+                if (!nuevaFecha.esValida())
+                {
+                    cout << " > ERROR: Fecha invalida." << endl;
+                }
+
+                else if (nuevaFecha.aNumero() > hoy.aNumero())
+                {
+                    cout << " > ERROR LOGICO: No puede ingresar una fecha futura." << endl;
+                    cout << "   La fecha de hoy es: " << hoy.toString() << endl;
+                }
+                else
+                {
+                    fechaOk = true;
+                }
             }
             while (!fechaOk);
 
             e.setFechaIngreso(nuevaFecha);
-            if (_repo.actualizar(pos, e)) cout << " >> Fecha modificada." << endl;
+            if (_repo.actualizar(pos, e)) cout << " >> Fecha modificada exitosamente." << endl;
             system("pause");
             break;
         }
@@ -366,6 +410,7 @@ void EquipoManager::listadoPorFechaIngreso()
         return;
     }
     _repo.leerTodos(v, cantidad);
+
 
     for (int i = 0; i < cantidad - 1; i++)
     {
@@ -621,7 +666,8 @@ void EquipoManager::menuConsultas()
             cout << " > Opcion incorrecta." << endl;
             system("pause");
         }
-    } while (opcion != 0);
+    }
+    while (opcion != 0);
 }
 
 void EquipoManager::consultaPorCliente()

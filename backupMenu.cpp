@@ -27,4 +27,5 @@ void BackupMenu::ejecutarOpcion(int opcion) {
       case 6: _manager.backupTodos(); break;
       case 0: return;
    }
+   pausar();
 }

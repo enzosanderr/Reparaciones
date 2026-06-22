@@ -1,5 +1,6 @@
 #include <iostream>
 #include "clienteManager.h"
+#include "equipoManager.h"
 #include "reparacionManager.h"
 #include "equipoArchivo.h"
 #include "utils.h"
@@ -66,7 +67,7 @@ Cliente ClienteManager::cargarDatos(bool &cancelado)
             if (clienteExistente.getEliminado())
             {
                 cout << "\n > AVISO: Este CUIT pertenece a un cliente dado de baja." << endl;
-                int reactivar = cargarEntero("¿Desea RESTAURAR y reactivar a este cliente ahora? (1=Si, 0=No): ");
+                int reactivar = cargarEntero(" Desea RESTAURAR y reactivar a este cliente ahora? (1=Si, 0=No): ");
 
                 if (reactivar == 1)
                 {
@@ -115,7 +116,7 @@ void ClienteManager::mostrar(const Cliente &c)
 void ClienteManager::alta()
 {
     system("cls");
-    cout << "\n=== ALTA DE CLIENTE ===" << endl<<endl;
+    cout << "\n=== ALTA DE CLIENTE ===" << endl<< endl;
 
     bool cancelado = false;
 
@@ -233,8 +234,8 @@ void ClienteManager::baja()
     }
     cout << "-----------------------------------------------------------------------------" << endl;
 
-
-    int confirmar = cargarEntero("¿Confirma la baja de este cliente? (1=Si, 0=No): ");
+    //confirmacion
+    int confirmar = cargarEntero(" Confirma la baja de este cliente? (1=Si, 0=No): ");
     if (confirmar != 1)
     {
         cout << " >> Operacion cancelada." << endl;
@@ -386,6 +387,7 @@ void ClienteManager::listadoPorApellido()
     }
     _repo.leerTodos(v, cantidad);
 
+    //ordenamiento por seleccion
     for (int i = 0; i < cantidad - 1; i++)
     {
         int min = i;
@@ -649,10 +651,10 @@ void ClienteManager::listadoPorTipo()
     for (int i = 0; i < cantidad; i++)
     {
         Cliente c = _repo.leer(i);
-        // Filtramos: que no este eliminado y que coincida estrictamente con la seleccion del usuario
+
         if (!c.getEliminado() && c.getTipoCliente() == tipoBuscado)
         {
-            mostrar(c); // Reutiliza tu salida est�ndar
+            mostrar(c);
             hayClientes = true;
         }
     }

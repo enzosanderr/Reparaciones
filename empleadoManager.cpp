@@ -11,10 +11,10 @@ void EmpleadoManager::cargarInicialesSiVacio()
 {
     if (_repo.getCantidadRegistros() != 0) return;
 
-    _repo.crear(Empleado("123", "Agustin Nahuel", "Parada"));
-    _repo.crear(Empleado("1234", "Luz", "Campagnale"));
-    _repo.crear(Empleado("12345", "Enzo Gabriel", "Sander"));
-    _repo.crear(Empleado("123456", "Claudio Andres", "Arce"));
+    _repo.crear(Empleado("101", "Agustin Nahuel", "Parada"));
+    _repo.crear(Empleado("102", "Luz", "Campagnale"));
+    _repo.crear(Empleado("103", "Enzo Gabriel", "Sander"));
+    _repo.crear(Empleado("104", "Claudio Andres", "Arce"));
 }
 
 
@@ -202,9 +202,11 @@ void EmpleadoManager::modificacion()
 
     Empleado e = _repo.leer(pos);
 
+
     if (e.getEliminado())
     {
-        cout << "\n > ERROR: No se puede modificar un empleado dado de baja." << endl;
+        cout << "\n > ERROR: El empleado seleccionado se encuentra dado de baja." << endl;
+        cout << "   Por motivos de auditoria, los datos de ex-empleados no pueden ser modificados." << endl;
         system("pause");
         return;
     }
@@ -489,7 +491,7 @@ void EmpleadoManager::informeCargaTrabajo()
     }
 
     cout << left << setw(12) << "LEGAJO"
-         << left << setw(30) << "NOMBRE COMPLETO"
+         << left << setw(35) << "NOMBRE COMPLETO"
          << right << setw(18) << "TAREAS PENDIENTES" << endl;
     cout << "----------------------------------------------------------------------" << endl;
 
@@ -504,7 +506,7 @@ void EmpleadoManager::informeCargaTrabajo()
 
             cout << left << setw(12) << e.getLegajo()
                  << left << setw(30) << nombreCompleto
-                 << right << setw(15) << tareas << " orden(es)" << endl;
+                 << right << setw(10) << tareas << " orden(es)" << endl;
             hayTecnicos = true;
         }
     }
